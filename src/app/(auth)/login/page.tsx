@@ -1,3 +1,4 @@
+'use client'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -26,7 +27,7 @@ export default function Component() {
           <div className="space-y-2">
             <div className="flex justify-between">
               <Label htmlFor="password" className="text-gray-200">Password</Label>
-              <Link href="#" className="text-sm text-teal-300 hover:underline">Forgot password?</Link>
+              <Link href="/forget-password" className="text-sm text-teal-300 hover:underline">Forgot password?</Link>
             </div>
             <Input 
               id="password" 
@@ -60,7 +61,7 @@ export default function Component() {
         </div>
         <div className="text-center text-gray-300">
           Don't have an account?{" "}
-          <Link href="#" className="text-teal-300 hover:underline">Sign up</Link>
+          <Link href="/signup" className="text-teal-300 hover:underline">Sign up</Link>
         </div>
       </div>
     </div>
