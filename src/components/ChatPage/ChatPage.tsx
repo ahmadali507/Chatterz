@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
 import { mockChat, mockContacts } from "@/config/config"; // Adjust the import according to your actual data source
 
-
 type ContactType = {
     id: number;
     name: string;
     unreadMessages: number;
 }
+
 const FloatingParticle = ({ delay = 0 }) => {
   return (
     <motion.div
@@ -35,22 +35,36 @@ const FloatingParticle = ({ delay = 0 }) => {
 };
 
 const ChatPage = () => {
-  const [showChat, setShowChat] = useState(true);
-  const [activeContact, setActiveContact] = useState<ContactType | null>(); // Track the active contact
+  const [showChat, setShowChat] = useState(false);
+  const [activeContact, setActiveContact] = useState<ContactType | null>(null); // Track the active contact
   const { scrollYProgress } = useScroll();
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
   const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.8]);
 
+  const handleContactClick = (contact: ContactType) => {
+    setActiveContact(contact);
+    setShowChat(true);
+  };
+
+  const handleBackToContacts = () => {
+    setShowChat(false);
+  };
+
   return (
     <div className="flex h-screen min-h-screen bg-gradient-to-b from-gray-900 via-purple-900 to-gray-900 text-gray-100 overflow-hidden">
-      <aside className="w-64 min-h-screen bg-gradient-to-b from-gray-900 via-purple-900 to-gray-900 text-gray-100 flex flex-col overflow-hidden">
+      {/* Sidebar */}
+      <aside
+        className={`fixed inset-0 transform transition-transform duration-300 bg-gradient-to-b from-gray-900 via-purple-900 to-gray-900 text-gray-100 lg:static lg:w-64 lg:translate-x-0 ${
+          showChat ? "-translate-x-full" : "translate-x-0"
+        }`}
+      >
         <div className="p-4 text-xl font-semibold">Contacts</div>
         <ul>
           {mockContacts.map((contact) => (
             <li
               key={contact.id}
               className="p-3 flex items-center hover:bg-gray-700 cursor-pointer"
-              onClick={() => setActiveContact(contact)}
+              onClick={() => handleContactClick(contact)}
             >
               <div className="relative flex items-center">
                 <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white">
@@ -65,7 +79,13 @@ const ChatPage = () => {
           ))}
         </ul>
       </aside>
-      <main className="flex-grow relative ">
+
+      {/* Chat Area */}
+      <main
+        className={`flex-grow relative flex flex-col transition-transform duration-300 transform lg:translate-x-0 ${
+          showChat ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
         <motion.div
           style={{ opacity, scale }}
           className="absolute inset-0 pointer-events-none"
@@ -83,34 +103,49 @@ const ChatPage = () => {
         >
           <div className="flex-grow p-4 bg-gradient-to-b from-gray-900 via-purple-900 to-gray-900 text-gray-100 flex flex-col overflow-hidden">
             {activeContact ? (
-              <div className="flex flex-col space-y-4">
-                {mockChat.map((message, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{
-                      opacity: 0,
-                      x: message.user === "Alice" ? 20 : -20,
-                    }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className={`flex ${
-                      message.user === "Alice" ? "justify-end" : "justify-start"
-                    }`}
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <Button
+                    className="lg:hidden bg-gray-700 p-2 rounded-full"
+                    onClick={handleBackToContacts}
                   >
+                    Back to Contacts
+                  </Button>
+                  <h2 className="text-xl font-semibold">
+                    Chat with {activeContact.name}
+                  </h2>
+                </div>
+                <div className="flex flex-col space-y-4 overflow-y-auto min-h-[96vh]  overflow-x-hidden">
+                  {mockChat.map((message, index) => (
                     <motion.div
-                      whileHover={{ scale: 1.05 }}
-                      className={`max-w-xs rounded-lg p-3 ${
+                      key={index}
+                      initial={{
+                        opacity: 0,
+                        x: message.user === "Alice" ? 20 : -20,
+                      }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                      className={`flex ${
                         message.user === "Alice"
-                          ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
-                          : "bg-gray-700 text-gray-100"
+                          ? "justify-end"
+                          : "justify-start"
                       }`}
                     >
-                      <p className="font-semibold">{message.user}</p>
-                      <p>{message.message}</p>
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        className={`max-w-xs rounded-lg p-3 ${
+                          message.user === "Alice"
+                            ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+                            : "bg-gray-700 text-gray-100"
+                        }`}
+                      >
+                        <p className="font-semibold">{message.user}</p>
+                        <p>{message.message}</p>
+                      </motion.div>
                     </motion.div>
-                  </motion.div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </>
             ) : (
               <div className="flex items-center justify-center h-full text-gray-300">
                 <p>Select a contact to start chatting</p>
