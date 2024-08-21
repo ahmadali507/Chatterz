@@ -21,6 +21,8 @@ import {
   UserPlus,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import Header from '@/components/customComponents/Header'
+import DummyChat from '@/components/customComponents/DummyChat'
 
 const mockChat = [
   { user: 'Alice', message: 'Hey everyone! How is it going?' },
@@ -75,167 +77,9 @@ export default function Component() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-purple-900 to-gray-900 text-gray-100 flex flex-col overflow-hidden">
-      <motion.header 
-        className="p-4 flex justify-between items-center bg-gray-800/50 backdrop-blur-md sticky top-0 z-10"
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ type: "spring", stiffness: 100, damping: 20 }}
-      >
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-          className="flex items-center space-x-2"
-        >
-          <MessageCircle className="w-8 h-8 text-blue-500" />
-          <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
-            Chatterz
-          </span>
-        </motion.div>
-        <nav className="flex items-center space-x-4">
-          <ul className="flex space-x-6">
-            {['Features', 'Pricing', 'Testimonials', 'FAQ'].map((item, index) => (
-              <motion.li
-                key={item}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-              >
-                <a href={`#${item.toLowerCase()}`} className="hover:text-blue-400">
-                  {item}
-                </a>
-              </motion.li>
-            ))}
-          </ul>
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex space-x-2"
-          >
-            <Button variant="ghost" size="sm"  onClick = {() => router.push('/login') } className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/50">
-              <LogIn className="w-4 h-4 mr-2" />
-              Sign In
-            </Button>
-            <Button size="sm" onClick = {() => router.push('/signup') } className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
-              <UserPlus className="w-4 h-4 mr-2" />
-              Sign Up
-            </Button>
-          </motion.div>
-        </nav>
-      </motion.header>
-
-      <main className="flex-grow flex flex-col items-center justify-center p-4 md:p-8 relative">
-        <motion.div
-          style={{ opacity, scale }}
-          className="absolute inset-0 pointer-events-none"
-        >
-          {[...Array(20)].map((_, i) => (
-            <FloatingParticle key={i} delay={i * 0.2} />
-          ))}
-        </motion.div>
-
-        <motion.h1
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-5xl md:text-7xl font-bold text-center mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500"
-        >
-          Connect and Collaborate with Chatterz
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="text-xl md:text-2xl text-center mb-8 max-w-3xl"
-        >
-          Experience seamless communication, real-time collaboration, and enhanced productivity with our feature-rich web chat application.
-        </motion.p>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="flex space-x-4"
-        >
-          <Button 
-            size="lg" 
-            className="text-lg px-8 py-6 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
-          >
-            Start Chatting Now
-          </Button>
-          <Button 
-            size="lg" 
-            className="text-lg px-8 py-6 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
-          >
-            Watch Demo
-          </Button>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.8 }}
-          className="mt-16 w-full max-w-4xl bg-gray-800/50 backdrop-blur-md rounded-lg shadow-lg overflow-hidden border border-purple-500/30"
-        >
-          <motion.div 
-            className="p-4 bg-gray-700/50 flex justify-between items-center"
-            whileHover={{ backgroundColor: "rgba(107, 114, 128, 0.3)" }}
-          >
-            <h3 className="text-xl font-semibold">Chatterz Web App</h3>
-            <Button
-              className='hover:scale-110 active:scale-110'
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowChat(!showChat)}
-            >
-              {showChat ? <ChevronDown /> : <ChevronUp />}
-            </Button>
-          </motion.div>
-          <motion.div
-            initial={false}
-            animate={{ height: showChat ? 'auto' : 0 }}
-            transition={{ duration: 0.3 }}
-            className="overflow-hidden"
-          >
-            <div className="p-4 h-80 overflow-y-auto flex flex-col space-y-4">
-              {mockChat.map((message, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: message.user === 'Alice' ? 20 : -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className={`flex ${
-                    message.user === 'Alice' ? 'justify-end' : 'justify-start'
-                  }`}
-                >
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    className={`max-w-xs rounded-lg p-3 ${
-                      message.user === 'Alice'
-                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
-                        : 'bg-gray-700 text-gray-100'
-                    }`}
-                  >
-                    <p className="font-semibold">{message.user}</p>
-                    <p>{message.message}</p>
-                  </motion.div>
-                </motion.div>
-              ))}
-            </div>
-            <div className="p-4 bg-gray-700/50 flex space-x-2">
-              <Input placeholder="Type a message..." className="flex-grow bg-gray-600/50 border-purple-500/30" />
-              <Button 
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 active:scale-110"
-              >
-                <Send className="w-5 h-5" />
-              </Button>
-            </div>
-          </motion.div>
-        </motion.div>
-      </main>
-
+      <Header/>
+      <DummyChat/>
+      
       <section id="features" className="py-16 px-4 md:px-8 relative">
         <motion.h2
           initial={{ opacity: 0, y: 50 }}
