@@ -1,13 +1,33 @@
-    import { motion } from 'framer-motion'
+import { motion, useAnimation } from 'framer-motion'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { LogIn, MessageCircle, UserPlus } from 'lucide-react'
 
 const Header = () => {
+  const controls = useAnimation();
+
+  const handleScroll = async (targetId: any) => {
+    const targetElement = document.getElementById(targetId);
+    if (targetElement) {
+      const yOffset = -100; // Adjust this offset value if necessary
+      const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
+
+      await controls.start({
+        y: targetPosition,
+        transition: { duration: 0.8, ease: [0.09, 1, 0.06, 1] }, // Smooth transition with custom easing
+      });
+
+      window.scrollTo({
+        top: targetPosition,
+        behavior: 'smooth',
+      });
+    }
+  };
+
   return (
     <>
       <motion.header
-        className="p-4 flex justify-between items-center bg-gray-800/50 backdrop-blur-md sticky top-0 z-10"
+        className="p-4 flex justify-between items-center fixed w-full top-0 bg-gray-800/50 backdrop-blur-md z-20"
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: "spring", stiffness: 100, damping: 20 }}
@@ -34,7 +54,15 @@ const Header = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                <Link href={`#${item.toLowerCase()}`} className="hover:text-blue-400">
+                <Link
+                  href={`#${item.toLowerCase()}`}
+                  scroll={false}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleScroll(item.toLowerCase());
+                  }}
+                  className="hover:text-blue-400"
+                >
                   {item}
                 </Link>
               </motion.li>
