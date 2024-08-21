@@ -1,113 +1,498 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
+import { useState, useEffect } from 'react'
+import { motion, useAnimation, useScroll, useTransform } from 'framer-motion'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  MessageCircle,
+  Send,
+  Zap,
+  Shield,
+  Smartphone,
+  Video,
+  FileText,
+  Users,
+  Star,
+  ChevronDown,
+  ChevronUp,
+  Check,
+  LogIn,
+  UserPlus,
+} from 'lucide-react'
+import { useRouter } from 'next/navigation'
+
+const mockChat = [
+  { user: 'Alice', message: 'Hey everyone! How is it going?' },
+  { user: 'Bob', message: 'Hi Alice! Just working on some code. You?' },
+  { user: 'Charlie', message: 'Hello! I am great, thanks for asking!' },
+  { user: 'Alice', message: 'Nice! I am planning a team meetup. Any suggestions?' },
+]
+
+const FloatingParticle = ({ delay = 0 }) => {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <motion.div
+      className="absolute w-2 h-2 bg-blue-500 rounded-full"
+      initial={{ opacity: 0, scale: 0 }}
+      animate={{
+        opacity: [0, 1, 0],
+        scale: [0, 1, 0],
+        y: [0, -100],
+        x: [0, Math.random() * 100 - 50],
+      }}
+      transition={{
+        duration: 5,
+        repeat: Infinity,
+        repeatType: 'loop',
+        ease: 'easeInOut',
+        delay: delay,
+      }}
+    />
+  )
+}
+
+export default function Component() {
+  const router = useRouter(); 
+  const [showChat, setShowChat] = useState(false)
+  const [selectedFaq, setSelectedFaq] = useState<number|null>(null)
+  const { scrollYProgress } = useScroll()
+  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0])
+  const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.8])
+
+  const controls = useAnimation()
+
+  useEffect(() => {
+    controls.start({
+      y: [0, -10, 0],
+      transition: {
+        duration: 5,
+        repeat: Infinity,
+        repeatType: 'reverse',
+        ease: 'easeInOut',
+      },
+    })
+  }, [controls])
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-purple-900 to-gray-900 text-gray-100 flex flex-col overflow-hidden">
+      <motion.header 
+        className="p-4 flex justify-between items-center bg-gray-800/50 backdrop-blur-md sticky top-0 z-10"
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ type: "spring", stiffness: 100, damping: 20 }}
+      >
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex items-center space-x-2"
+        >
+          <MessageCircle className="w-8 h-8 text-blue-500" />
+          <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+            Chatterz
+          </span>
+        </motion.div>
+        <nav className="flex items-center space-x-4">
+          <ul className="flex space-x-6">
+            {['Features', 'Pricing', 'Testimonials', 'FAQ'].map((item, index) => (
+              <motion.li
+                key={item}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <a href={`#${item.toLowerCase()}`} className="hover:text-blue-400">
+                  {item}
+                </a>
+              </motion.li>
+            ))}
+          </ul>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="flex space-x-2"
           >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+            <Button variant="ghost" size="sm"  onClick = {() => router.push('/login') } className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/50">
+              <LogIn className="w-4 h-4 mr-2" />
+              Sign In
+            </Button>
+            <Button size="sm" onClick = {() => router.push('/signup') } className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+              <UserPlus className="w-4 h-4 mr-2" />
+              Sign Up
+            </Button>
+          </motion.div>
+        </nav>
+      </motion.header>
+
+      <main className="flex-grow flex flex-col items-center justify-center p-4 md:p-8 relative">
+        <motion.div
+          style={{ opacity, scale }}
+          className="absolute inset-0 pointer-events-none"
+        >
+          {[...Array(20)].map((_, i) => (
+            <FloatingParticle key={i} delay={i * 0.2} />
+          ))}
+        </motion.div>
+
+        <motion.h1
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="text-5xl md:text-7xl font-bold text-center mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500"
+        >
+          Connect and Collaborate with Chatterz
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="text-xl md:text-2xl text-center mb-8 max-w-3xl"
+        >
+          Experience seamless communication, real-time collaboration, and enhanced productivity with our feature-rich web chat application.
+        </motion.p>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
+          className="flex space-x-4"
+        >
+          <Button 
+            size="lg" 
+            className="text-lg px-8 py-6 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
+          >
+            Start Chatting Now
+          </Button>
+          <Button 
+            size="lg" 
+            className="text-lg px-8 py-6 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
+          >
+            Watch Demo
+          </Button>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.8 }}
+          className="mt-16 w-full max-w-4xl bg-gray-800/50 backdrop-blur-md rounded-lg shadow-lg overflow-hidden border border-purple-500/30"
+        >
+          <motion.div 
+            className="p-4 bg-gray-700/50 flex justify-between items-center"
+            whileHover={{ backgroundColor: "rgba(107, 114, 128, 0.3)" }}
+          >
+            <h3 className="text-xl font-semibold">Chatterz Web App</h3>
+            <Button
+              className='hover:scale-110 active:scale-110'
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowChat(!showChat)}
+            >
+              {showChat ? <ChevronDown /> : <ChevronUp />}
+            </Button>
+          </motion.div>
+          <motion.div
+            initial={false}
+            animate={{ height: showChat ? 'auto' : 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
+            <div className="p-4 h-80 overflow-y-auto flex flex-col space-y-4">
+              {mockChat.map((message, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, x: message.user === 'Alice' ? 20 : -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                  className={`flex ${
+                    message.user === 'Alice' ? 'justify-end' : 'justify-start'
+                  }`}
+                >
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    className={`max-w-xs rounded-lg p-3 ${
+                      message.user === 'Alice'
+                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+                        : 'bg-gray-700 text-gray-100'
+                    }`}
+                  >
+                    <p className="font-semibold">{message.user}</p>
+                    <p>{message.message}</p>
+                  </motion.div>
+                </motion.div>
+              ))}
+            </div>
+            <div className="p-4 bg-gray-700/50 flex space-x-2">
+              <Input placeholder="Type a message..." className="flex-grow bg-gray-600/50 border-purple-500/30" />
+              <Button 
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 active:scale-110"
+              >
+                <Send className="w-5 h-5" />
+              </Button>
+            </div>
+          </motion.div>
+        </motion.div>
+      </main>
+
+      <section id="features" className="py-16 px-4 md:px-8 relative">
+        <motion.h2
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-4xl md:text-5xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500"
+        >
+          Why Choose Chatterz?
+        </motion.h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+          {[
+            { icon: <Zap className="w-12 h-12 text-yellow-400" />, title: "Real-time Messaging", description: "Instant message delivery for smooth conversations." },
+            { icon: <Video className="w-12 h-12 text-green-400" />, title: "Video Conferencing", description: "Crystal-clear video calls with screen sharing." },
+            { icon: <FileText className="w-12 h-12 text-purple-400" />, title: "File Sharing", description: "Easily share and collaborate on documents." },
+            { icon: <Users className="w-12 h-12 text-pink-400" />, title: "Team Channels", description: "Organize discussions by topics or projects." },
+            { icon: <Shield className="w-12 h-12 text-red-400" />, title: "Enhanced Security", description: "End-to-end encryption for all your communications." },
+            { icon: <Smartphone className="w-12 h-12 text-blue-400" />, title: "Cross-Platform", description: "Access Chatterz from any device, anywhere." },
+            { icon: <Star className="w-12 h-12 text-amber-400" />, title: "Rich Media Support", description: "Share GIFs, emojis, and stickers in your chats." },
+            { icon: <MessageCircle className="w-12 h-12 text-indigo-400" />, title: "Thread Replies", description: "Keep conversations organized with threaded messages." },
+          ].map((feature, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 * index }}
+              whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(167, 139, 250, 0.3)" }}
+              className="bg-gray-800/50 backdrop-blur-md p-6 rounded-lg text-center border border-purple-500/30 hover:border-purple-500/60 transition-all duration-300"
+            >
+              <motion.div
+                animate={controls}
+                className="flex justify-center mb-4"
+              >
+                {feature.icon}
+              </motion.div>
+              <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+              <p className="text-gray-300">{feature.description}</p>
+            </motion.div>
+          ))}
         </div>
-      </div>
+      </section>
 
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
+      <section id="pricing" className="py-16 px-4 md:px-8 bg-gray-800/30 backdrop-blur-md relative">
+        <motion.h2
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-4xl md:text-5xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500"
         >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+          Choose Your Plan
+        </motion.h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {[
+            { name: "Basic", price: "Free", features: ["Up to 10 users", "5 GB file storage", "24/7 support"] },
+            { name: "Pro", price: "$9.99/mo", features: ["Up to 100 users", "50 GB file storage", "Priority support", "Advanced analytics"] },
+            { name: "Enterprise", price: "Custom", features: ["Unlimited users", "Unlimited storage", "Dedicated support", "Custom integrations"] },
+          ].map((plan, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 * index }}
+              whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(167, 139, 250, 0.4)" }}
+              className="bg-gradient-to-b from-gray-800/50 to-purple-900/30 backdrop-blur-md p-8 rounded-lg text-center flex flex-col border border-purple-500/30 hover:border-purple-500/60 transition-all duration-300"
+            >
+              <h3 className="text-2xl font-semibold mb-4">{plan.name}</h3>
+              <p className="text-4xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+                {plan.price}
+              </p>
+              <ul className="text-left mb-8 flex-grow">
+                {plan.features.map((feature, i) => (
+                  <motion.li
+                    key={i}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.3, delay: 0.1 * i }}
+                    className="flex items-center mb-2"
+                  >
+                    <Check className="w-5 h-5 mr-2 text-green-500" />
+                    {feature}
+                  </motion.li>
+                ))}
+              </ul>
+              <Button
+                size="lg"
+                className= "bg-gradient-to-r hover:scale-110 active: scale-110 from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-70"
+              >
+                Choose Plan
+              </Button>
+            </motion.div>
+          ))}
+        </div>
+      </section>
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
+      <section id="testimonials" className="py-16 px-4 md:px-8 relative overflow-hidden">
+        <motion.h2
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-4xl md:text-5xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500"
         >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
+          What Our Users Say
+        </motion.h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {[
+            { name: "Sarah L.", role: "Project Manager", quote: "Chatterz has revolutionized our team communication. It's intuitive and packed with features!" },
+            { name: "Mike R.", role: "Software Developer", quote: "The code snippet sharing and inline code highlighting in Chatterz are game-changers for our dev team." },
+            { name: "Emily T.", role: "Marketing Director", quote: "Chatterz's file organization and search capabilities have made our content collaboration so much easier." },
+          ].map((testimonial, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 * index }}
+              whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(167, 139, 250, 0.3)" }}
+              className="bg-gray-800/50 backdrop-blur-md p-6 rounded-lg flex flex-col border border-purple-500/30 hover:border-purple-500/60 transition-all duration-300"
+            >
+              <p className="text-lg mb-4 flex-grow italic">"{testimonial.quote}"</p>
+              <div>
+                <p className="font-semibold">{testimonial.name}</p>
+                <p className="text-sm text-gray-400">{testimonial.role}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
+      <section id="faq" className="py-16 px-4 md:px-8 bg-gray-800/30 backdrop-blur-md relative">
+        <motion.h2
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-4xl md:text-5xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500"
         >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
+          Frequently Asked Questions
+        </motion.h2>
+        <div className="max-w-3xl mx-auto">
+          {[
+            { question: "Is Chatterz free to use?", answer: "Chatterz offers a free basic plan for small teams. We also have paid plans with additional features for growing teams and enterprises." },
+            { question: "Can I access Chatterz on mobile devices?", answer: "Yes, Chatterz is fully responsive and can be accessed via web browsers on any device. We also have native mobile apps for iOS and Android for a better mobile experience." },
+            { question: "How secure is Chatterz?", answer: "Security is our top priority. Chatterz uses end-to-end encryption for all communications, and we regularly undergo third-party security audits to ensure the highest level of data protection." },
+            { question: "Can I integrate Chatterz with other tools?", answer: "Chatterz offers a wide range of integrations with popular tools and services. We also provide an API for custom integrations in our higher-tier plans." },
+          ].map((faq, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 * index }}
+              className="mb-4"
+            >
+              <motion.button
+                className="w-full text-left p-4 rounded-lg bg-gray-700/50 hover:bg-gray-600/50 transition-all duration-300"
+                onClick={() => setSelectedFaq(selectedFaq === index ? null : index)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold">{faq.question}</span>
+                  {selectedFaq === index ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                </div>
+              </motion.button>
+              <motion.div
+                initial={false}
+                animate={{ height: selectedFaq === index ? 'auto' : 0, opacity: selectedFaq === index ? 1 : 0 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden bg-gray-700/30 backdrop-blur-md rounded-lg mt-2 p-4"
+              >
+                <p>{faq.answer}</p>
+              </motion.div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
 
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
+      <section className="py-16 px-4 md:px-8 relative overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="max-w-4xl mx-auto text-center relative z-10"
         >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
+          <h2 className="text-4xl md:text-5xl font-bold mb-8 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+            Ready to transform your team communication?
           </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  );
+          <p className="text-xl mb-8">Join thousands of teams already using Chatterz to boost their productivity and collaboration.</p>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4"
+          >
+            <Button
+              size="lg"
+              className="w-full sm:w-auto text-lg px-8 py-6 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
+            >
+              Get Started for Free
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="w-full sm:w-auto text-lg px-8 py-6 border-2 border-purple-500 hover:bg-purple-500/20 transition-all duration-300 transform hover:scale-105"
+            >
+              Schedule a Demo
+            </Button>
+          </motion.div>
+        </motion.div>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-900/20 to-transparent pointer-events-none" />
+      </section>
+
+      <footer className="bg-gray-900/50 backdrop-blur-md text-gray-400 py-12 px-4 md:px-8 border-t border-purple-500/30">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="flex flex-col space-y-4">
+            <div className="flex items-center space-x-2">
+              <MessageCircle className="w-6 h-6 text-blue-500" />
+              <span className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+                Chatterz
+              </span>
+            </div>
+            <p>Empowering teams with seamless communication and collaboration.</p>
+          </div>
+          {[
+            { title: "Product", items: ["Features", "Pricing", "Integrations", "FAQ"] },
+            { title: "Company", items: ["About Us", "Careers", "Blog", "Contact"] },
+            { title: "Legal", items: ["Privacy Policy", "Terms of Service", "Cookie Policy", "GDPR Compliance"] },
+          ].map((column, index) => (
+            <div key={index}>
+              <h3 className="text-lg font-semibold mb-4 text-white">{column.title}</h3>
+              <ul className="space-y-2">
+                {column.items.map((item, i) => (
+                  <motion.li
+                    key={i}
+                    whileHover={{ x: 5 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                  >
+                    <a href="#" className="hover:text-blue-400 transition-colors duration-200">
+                      {item}
+                    </a>
+                  </motion.li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <div className="mt-8 pt-8 border-t border-gray-800 text-center">
+          <p>&copy; 2023 Chatterz. All rights reserved.</p>
+        </div>
+      </footer>
+    </div>
+  )
 }
