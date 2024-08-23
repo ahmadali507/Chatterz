@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -51,6 +51,24 @@ export default function ChatPage() {
   const handleBackToContacts = () => {
     setShowChat(false)
   }
+
+    // Handle responsive behavior on screen resize
+    useEffect(() => {
+      const handleResize = () => {
+        if (window.innerWidth > 768) {
+          setShowChat(false)
+        } else {
+          setShowChat(false)
+        }
+      }
+  
+      handleResize() // Set initial state based on current screen size
+      window.addEventListener('resize', handleResize)
+  
+      return () => {
+        window.removeEventListener('resize', handleResize)
+      }
+    }, [])
 
   return (
     <div className="flex h-screen bg-gradient-to-b from-gray-900 via-purple-900 to-gray-900 text-gray-100">

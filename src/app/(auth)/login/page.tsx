@@ -21,7 +21,7 @@ export default function Component() {
               placeholder="m@example.com" 
               required 
               type="email"
-              className="bg-white bg-opacity-10 border-white border-opacity-20 placeholder-gray-400 text-white focus:border-teal-300 focus:ring-teal-300"
+              className="bg-white bg-opacity-10 border-white border-opacity-20 placeholder-gray-300 text-white focus:border-teal-300 focus:ring-teal-300"
             />
           </div>
           <div className="space-y-2">
@@ -33,7 +33,7 @@ export default function Component() {
               id="password" 
               required 
               type="password"
-              className="bg-white bg-opacity-10 border-white border-opacity-20 placeholder-gray-400 text-white focus:border-teal-300 focus:ring-teal-300"
+              className="bg-white bg-opacity-10 border-white border-opacity-20 placeholder-gray-300 text-white focus:border-teal-300 focus:ring-teal-300"
             />
           </div>
           <Button type="submit" className="w-full bg-gradient-to-r from-teal-400 to-blue-500 hover:from-teal-500 hover:to-blue-600 text-white font-semibold transition-all duration-200">
@@ -49,14 +49,6 @@ export default function Component() {
           >
             {/* <Icons.google className="mr-2 h-4 w-4" /> */}
             Log in with Google
-          </Button>
-          <Button 
-            variant="outline" 
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white border-transparent transition-all duration-200"
-            onClick={() => console.log("Facebook login")}
-          >
-            {/* <Icons.facebook className="mr-2 h-4 w-4" /> */}
-            Log in with Facebook
           </Button>
         </div>
         <div className="text-center text-gray-300">
