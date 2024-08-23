@@ -3,9 +3,34 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import { zodResolver } from "@hookform/resolvers/zod"
 import Link from "next/link"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+
+
+const LoginSchema = z.object({
+  email : z.string().email().min(1, "Email is required"), 
+  password : z.string().min(8, "Password must be at least 8 characters")
+}); 
+
+type LoginSchemaT = z.infer< typeof LoginSchema>
 
 export default function Component() {
+
+  const {
+    register, 
+    handleSubmit, 
+    formState: { errors }
+  } = useForm<LoginSchemaT>({
+    resolver : zodResolver(LoginSchema)
+  }); 
+
+
+  const onSubmit = (data: any) =>{
+    console.log(data); 
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-teal-800 p-4">
       <div className="w-full max-w-md space-y-6 bg-white bg-opacity-10 backdrop-blur-md p-8 rounded-xl shadow-2xl border border-white border-opacity-20">
@@ -13,16 +38,18 @@ export default function Component() {
           <h1 className="text-3xl font-bold text-white">Log In</h1>
           <p className="text-gray-300">Welcome back! Please log in to your account</p>
         </div>
-        <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email" className="text-gray-200">Email</Label>
             <Input 
               id="email" 
               placeholder="m@example.com" 
+              {...register("email")}
               required 
               type="email"
               className="bg-white bg-opacity-10 border-white border-opacity-20 placeholder-gray-300 text-white focus:border-teal-300 focus:ring-teal-300"
             />
+            {errors.email && <p className="text-red-500">{errors?.email?.message}</p>}
           </div>
           <div className="space-y-2">
             <div className="flex justify-between">
@@ -32,9 +59,11 @@ export default function Component() {
             <Input 
               id="password" 
               required 
+              {...register("password")}
               type="password"
               className="bg-white bg-opacity-10 border-white border-opacity-20 placeholder-gray-300 text-white focus:border-teal-300 focus:ring-teal-300"
             />
+            {errors.password && <p className = "text-red-500">{errors.password.message}</p>}
           </div>
           <Button type="submit" className="w-full bg-gradient-to-r from-teal-400 to-blue-500 hover:from-teal-500 hover:to-blue-600 text-white font-semibold transition-all duration-200">
             Log In
