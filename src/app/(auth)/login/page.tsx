@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import { auth } from "@/firebase/firebaseConfig"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { signInWithEmailAndPassword } from "firebase/auth"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -27,7 +29,9 @@ export default function Component() {
   }); 
 
 
-  const onSubmit = (data: any) =>{
+  const onSubmit = async(data: any) =>{
+    const signedInUser = await signInWithEmailAndPassword(auth, data.email, data.password); 
+    console.log(signedInUser); 
     console.log(data); 
   }
 

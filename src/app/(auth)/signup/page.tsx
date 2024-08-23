@@ -5,7 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import {auth, db} from '../../../firebase/firebaseConfig'
 import { z } from 'zod';
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { addDoc, collection } from "firebase/firestore";
 
 const SignUpSchema = z.object({
   username: z.string().min(1, "The username is required"),
@@ -24,7 +27,9 @@ export default function Component() {
     resolver: zodResolver(SignUpSchema)
   });
 
-  const onSubmit = (data: SignupSchemaT) => {
+  const onSubmit = async(data: SignupSchemaT) => {
+    const user = await createUserWithEmailAndPassword(auth, data.email, data.password)
+    console.log(user); 
     console.log(data);
   };
 
@@ -86,3 +91,4 @@ export default function Component() {
     </div>
   );
 }
+
