@@ -31,6 +31,7 @@ export default function Component() {
 
   const onSubmit = async(data: any) =>{
     const signedInUser = await signInWithEmailAndPassword(auth, data.email, data.password); 
+    
     console.log(signedInUser); 
     console.log(data); 
   }

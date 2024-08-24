@@ -7,8 +7,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {auth, db} from '../../../firebase/firebaseConfig'
 import { z } from 'zod';
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { addDoc, collection } from "firebase/firestore";
+import { useState } from "react";
+import { toast } from "sonner";
 
 const SignUpSchema = z.object({
   username: z.string().min(1, "The username is required"),
@@ -19,6 +21,9 @@ const SignUpSchema = z.object({
 type SignupSchemaT = z.infer<typeof SignUpSchema>;
 
 export default function Component() {
+
+  const [verificationEmailSent , setVerificationEmailSent] = useState<boolean>(false); 
+
   const {
     register,
     handleSubmit,
@@ -27,11 +32,25 @@ export default function Component() {
     resolver: zodResolver(SignUpSchema)
   });
 
-  const onSubmit = async(data: SignupSchemaT) => {
-    const user = await createUserWithEmailAndPassword(auth, data.email, data.password)
-    console.log(user); 
+  const onSubmit = async (data: SignupSchemaT) => {
+    try {
+      const userCredentials = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      
+      // Directly use the result of sendEmailVerification
+      await sendEmailVerification(userCredentials.user);
+      setVerificationEmailSent(true);
+      toast.success("Email Verification link sent");
+      console.log("Email verification email has been sent");
+  
+    } catch (error) {
+      console.error("Email verification failed:", error);
+      setVerificationEmailSent(false);
+      toast.error("Failed to send verification email. Please try again.");
+    }
+  
     console.log(data);
   };
+  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-teal-800 p-4">
