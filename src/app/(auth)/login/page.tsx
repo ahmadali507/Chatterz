@@ -1,4 +1,5 @@
 'use client'
+import { Icons } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -60,6 +61,8 @@ export default function Component() {
           })
   }
 
+  const GoogleIcons = Icons['googleicon']; 
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-teal-800 p-4">
       <div className="w-full max-w-md space-y-6 bg-white bg-opacity-10 backdrop-blur-md p-8 rounded-xl shadow-2xl border border-white border-opacity-20">
@@ -100,13 +103,13 @@ export default function Component() {
         </form>
         <Separator className="bg-white bg-opacity-20" />
         <div className="space-y-4">
-          <Button 
-            variant="outline" 
-            className="w-full bg-white bg-opacity-10 hover:bg-opacity-20 text-white border-white border-opacity-20 transition-all duration-200"
+        <Button
+             variant="outline"
+            className="w-full flex flex-row justify-evenly bg-white  bg-opacity-90 hover:bg-opacity-10 hover:text-destructive text-black border-white border-opacity-20 transition-all duration-200"
             onClick={handleGoogleLogin}
           >
-            {/* <Icons.google className="mr-2 h-4 w-4" /> */}
-            Log in with Google
+            <GoogleIcons className="w-6 h-6 bg-clip"/>
+            Sign up with Google
           </Button>
         </div>
         <div className="text-center text-gray-300">

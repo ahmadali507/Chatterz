@@ -17,6 +17,7 @@ import { addDoc, collection } from "firebase/firestore";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { Icons } from "@/components/icons";
 
 const SignUpSchema = z.object({
   username: z.string().min(1, "The username is required"),
@@ -90,6 +91,8 @@ export default function Component() {
       toast.error("Google sign-in failed. Please try again.");
     }
   };
+  /// Icons 
+  const GoogleIcons = Icons['googleicon']; 
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-teal-800 p-4">
@@ -146,10 +149,11 @@ export default function Component() {
         <Separator className="bg-white bg-opacity-20" />
         <div className="space-y-4">
           <Button
-            variant="outline"
-            className="w-full bg-white bg-opacity-10 hover:bg-opacity-20 text-white border-white border-opacity-20 transition-all duration-200"
+             variant="outline"
+            className="w-full flex flex-row justify-evenly bg-white  bg-opacity-90 hover:bg-opacity-10 hover:text-destructive text-black border-white border-opacity-20 transition-all duration-200"
             onClick={handleGoogleSignIn}
           >
+            <GoogleIcons className="w-6 h-6 bg-clip"/>
             Sign up with Google
           </Button>
         </div>

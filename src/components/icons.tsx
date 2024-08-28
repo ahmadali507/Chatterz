@@ -1,6 +1,5 @@
-
-export type  Icons = {
-    googleicon :  GIcon; 
+import { GIcon } from "@/utils/svgs";
+export const  Icons = {
+    googleicon :  GIcon, 
 }
-
-export type IconType = keyof typeof Icons
+export type IconType = keyof typeof Icons; 
