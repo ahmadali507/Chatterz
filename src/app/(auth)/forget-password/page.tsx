@@ -2,8 +2,11 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { auth } from "@/firebase/firebaseConfig"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { sendPasswordResetEmail } from "firebase/auth"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
@@ -19,8 +22,15 @@ export default function Component() {
   } = useForm<SchemaT>({
     resolver : zodResolver(Schema)
   });
+  const router = useRouter(); 
   
-  const onSubmit = (data: SchemaT) => {
+  const onSubmit = async(data: SchemaT) => {
+    await sendPasswordResetEmail(auth, data.email).then(()=>{
+      alert("password reset email send successfully");
+      router.push('/login') 
+    }).catch((err)=>{
+       alert("password reset email was not send")  
+    })
     console.log(data); 
   }
 

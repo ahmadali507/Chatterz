@@ -3,11 +3,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { auth } from "@/firebase/firebaseConfig"
+import { auth, provider } from "@/firebase/firebaseConfig"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { signInWithEmailAndPassword } from "firebase/auth"
+import { GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup } from "firebase/auth"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
+import { toast } from "sonner"
 import { z } from "zod"
 
 
@@ -19,7 +21,7 @@ const LoginSchema = z.object({
 type LoginSchemaT = z.infer< typeof LoginSchema>
 
 export default function Component() {
-
+  const router = useRouter(); 
   const {
     register, 
     handleSubmit, 
@@ -30,10 +32,32 @@ export default function Component() {
 
 
   const onSubmit = async(data: any) =>{
-    const signedInUser = await signInWithEmailAndPassword(auth, data.email, data.password); 
-    
-    console.log(signedInUser); 
-    console.log(data); 
+     await signInWithEmailAndPassword(auth, data.email, data.password).then((userCredentials)=>{
+        if(userCredentials.user.emailVerified){
+          toast.success("USER login Successfull"); 
+          router.push('/')
+          console.log("User is signed in");
+        }
+        else if(!userCredentials.user.emailVerified){
+          toast.error("Email not verified, click on link in verification email sent to verify."); 
+          setTimeout(()=>{
+            router.push("/signup"); 
+          },3000)
+
+        }
+     })
+
+  }
+
+  const handleGoogleLogin =  async() =>{
+          await signInWithPopup(auth, provider).then((result)=>{
+               const Credentials = GoogleAuthProvider.credentialFromResult(result);
+               const token = Credentials?.accessToken; 
+                const user = result.user;
+                alert("user signed In successfully") 
+          }).catch((err) =>{
+            alert("Log In using Google Auth Failed"); 
+          })
   }
 
   return (
@@ -79,7 +103,7 @@ export default function Component() {
           <Button 
             variant="outline" 
             className="w-full bg-white bg-opacity-10 hover:bg-opacity-20 text-white border-white border-opacity-20 transition-all duration-200"
-            onClick={() => console.log("Google login")}
+            onClick={handleGoogleLogin}
           >
             {/* <Icons.google className="mr-2 h-4 w-4" /> */}
             Log in with Google
