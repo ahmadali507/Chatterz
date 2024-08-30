@@ -42,7 +42,7 @@ export default function Component() {
   const onSubmit = async (data: SignupSchemaT) => {
     try {
       const userCredentials = await createUserWithEmailAndPassword(auth, data.email, data.password);
-
+      console.log(userCredentials.user); 
       // Directly use the result of sendEmailVerification
       await sendEmailVerification(userCredentials.user)
         .then(() => {
@@ -52,6 +52,7 @@ export default function Component() {
           setTimeout(() => {
             router.push("/login");
           }, 3000);
+          console.log(userCredentials.user); 
         })
         .catch((err) => {
           console.error("Email verification failed:", err);
@@ -66,7 +67,6 @@ export default function Component() {
       setVerificationEmailSent(false);
       toast.error("Failed to register. Please try again.");
     }
-
     console.log(data);
   };
 
@@ -77,13 +77,10 @@ export default function Component() {
       // This gives you a Google Access Token. You can use it to access the Google API.
       const credential = GoogleAuthProvider.credentialFromResult(result);
       const token = credential?.accessToken;
-
       // The signed-in user info.
       const user = result.user;
       console.log("Google Sign-In successful:", user);
-
       // Optionally add user to Firestore or perform other actions
-    
       toast.success("Signed in with Google successfully!");
       router.push("/"); // Redirecting to a dashboard page after successful sign-in
     } catch (error: any) {
@@ -159,5 +156,6 @@ export default function Component() {
         </div>
       </div>
     </div>
+
   );
 }

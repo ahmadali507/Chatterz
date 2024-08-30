@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { auth, provider } from "@/firebase/firebaseConfig"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup } from "firebase/auth"
+import { GoogleAuthProvider, reload, signInWithEmailAndPassword, signInWithPopup } from "firebase/auth"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
@@ -33,6 +33,7 @@ export default function Component() {
 
 
   const onSubmit = async(data: any) =>{
+  
      await signInWithEmailAndPassword(auth, data.email, data.password).then((userCredentials)=>{
         if(userCredentials.user.emailVerified){
           toast.success("USER login Successfull"); 
