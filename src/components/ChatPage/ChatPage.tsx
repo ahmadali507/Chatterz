@@ -1,12 +1,12 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   MessageCircle,
   Send,
@@ -14,85 +14,183 @@ import {
   MoreVertical,
   Paperclip,
   Smile,
-} from 'lucide-react'
-import { collection, doc, getDoc, getDocs } from 'firebase/firestore'
-import { auth, db } from '@/firebase/firebaseConfig'
+} from "lucide-react";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
+import { auth, db } from "@/firebase/firebaseConfig";
+import { Message, selectedContact, Users } from "@/types/types";
+import { toast } from "sonner";
+import { FirebaseError } from "firebase/app";
 
 // Mock data for contacts and messages
 const contacts = [
-  { id: 1, name: 'Alice Johnson', avatar: '/placeholder.svg', lastMessage: 'Hey, how are you?', unreadCount: 2 },
-  { id: 2, name: 'Bob Smith', avatar: '/placeholder.svg', lastMessage: 'Can we schedule a meeting?', unreadCount: 0 },
-  { id: 3, name: 'Charlie Brown', avatar: '/placeholder.svg', lastMessage: 'I have sent you the files.', unreadCount: 1 },
-  { id: 4, name: 'Diana Prince', avatar: '/placeholder.svg', lastMessage: 'Thanks for your help!', unreadCount: 0 },
-  { id: 5, name: 'Ethan Hunt', avatar: '/placeholder.svg', lastMessage: 'Mission accomplished!', unreadCount: 3 },
-]
+  {
+    id: 1,
+    name: "Alice Johnson",
+    avatar: "/placeholder.svg",
+    lastMessage: "Hey, how are you?",
+    unreadCount: 2,
+  },
+  {
+    id: 2,
+    name: "Bob Smith",
+    avatar: "/placeholder.svg",
+    lastMessage: "Can we schedule a meeting?",
+    unreadCount: 0,
+  },
+  {
+    id: 3,
+    name: "Charlie Brown",
+    avatar: "/placeholder.svg",
+    lastMessage: "I have sent you the files.",
+    unreadCount: 1,
+  },
+  {
+    id: 4,
+    name: "Diana Prince",
+    avatar: "/placeholder.svg",
+    lastMessage: "Thanks for your help!",
+    unreadCount: 0,
+  },
+  {
+    id: 5,
+    name: "Ethan Hunt",
+    avatar: "/placeholder.svg",
+    lastMessage: "Mission accomplished!",
+    unreadCount: 3,
+  },
+];
 
 const messages = [
-  { id: 1, senderId: 1, text: 'Hey, how are you?', timestamp: '10:00 AM' },
-  { id: 2, senderId: 'me', text: 'Im doing great, thanks! How about you?', timestamp: '10:02 AM' },
-  { id: 3, senderId: 1, text: 'I am good too. Did you finish the project?', timestamp: '10:05 AM' },
-  { id: 4, senderId: 'me', text: 'Yes, I just sent you the final version. Can you check it?', timestamp: '10:08 AM' },
-  { id: 5, senderId: 1, text: 'Sure, I will take a look right away.', timestamp: '10:10 AM' },
-]
+  { id: 1, senderId: 1, text: "Hey, how are you?", timestamp: "10:00 AM" },
+  {
+    id: 2,
+    senderId: "me",
+    text: "Im doing great, thanks! How about you?",
+    timestamp: "10:02 AM",
+  },
+  {
+    id: 3,
+    senderId: 1,
+    text: "I am good too. Did you finish the project?",
+    timestamp: "10:05 AM",
+  },
+  {
+    id: 4,
+    senderId: "me",
+    text: "Yes, I just sent you the final version. Can you check it?",
+    timestamp: "10:08 AM",
+  },
+  {
+    id: 5,
+    senderId: 1,
+    text: "Sure, I will take a look right away.",
+    timestamp: "10:10 AM",
+  },
+];
 
-type selectedContact = {
-  username : string, 
-  profilePic ?: string, 
-  lastMessage ?: string,
-  unreadCount ?: number, 
-}
-type Users = {
-  username: string, 
-  email : string, 
-  uid : string, 
-  profilePic ?: string, 
-}
 export default function ChatPage() {
-  const [selectedContact, setSelectedContact] = useState<selectedContact | null>(null)
+  const [selectedContact, setSelectedContact] =
+    useState<selectedContact | null>(null);
   const [users, setUsers] = useState<Users[]>([]);
-  const [showChat, setShowChat] = useState(false)
+  const [showChat, setShowChat] = useState(false);
 
-  const currentUser = auth.currentUser; 
-  console.log(currentUser); 
-  useEffect(()=>{
-    const fetchUser = async () =>{
-      // const query = collection(db,"users"); 
-      const querySnapshot = await getDocs(collection(db,"users"));
-      const usersData: Users[] =  querySnapshot.docs.map((doc)=>({
-        uid : doc.id, 
-        ...doc.data(), 
-      })).filter((user) => user.uid !== currentUser?.uid) as Users[]; 
-      
-      setUsers(usersData); 
-    } 
+  ////////////////// now creating states for message sendding and receiving//////////////////
+  const [message, setMessage] = useState<string>();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [chatid, setChatId] = useState<string>("");
+
+  useEffect(() => {
+    const fetchMessages = async () => {};
+  });
+
+  const createChat = async () => {
+    const chatId = `${currentUser?.uid}_${selectedContact?.uid}`;
+    setChatId(chatId as string);
+    const chatRef = doc(db, "chats", chatid);
+    // check whether the chat exists already ... or not ...
+    const checkchat = await getDoc(chatRef);
+    if (!checkchat) {
+      await setDoc(chatRef, {
+        participants: [currentUser?.uid, selectedContact?.uid],
+        lastMessage: "",
+        lastMessagetimeStamp: null,
+        unreadCount: 0,
+      });
+    }
+  };
+
+  const handleMessageSend = async () => {
+    if (!message || !chatid) {
+      toast.warning("type Something first");
+      return;
+    }
+    await addDoc(collection(db, "chats", chatid, "messages"), {
+      senderId: currentUser?.uid,
+      receiverId: selectedContact?.uid,
+      text: message,
+      timestamp: new Date().toISOString(),
+      read: false,
+    });
+
+    await updateDoc(doc(db, "chats", chatid), {
+      lastMessage: message,
+      lastMessageTimeStamp: new Date().toISOString(),
+      unreadCount: 10,
+    });
+    setMessage("");
+  };
+
+  const currentUser = auth.currentUser;
+  console.log(currentUser);
+  useEffect(() => {
+    const fetchUser = async () => {
+      // const query = collection(db,"users");
+      const querySnapshot = await getDocs(collection(db, "users"));
+      const usersData: Users[] = querySnapshot.docs
+        .map((doc) => ({
+          uid: doc.id,
+          ...doc.data(),
+        }))
+        .filter((user) => user.uid !== currentUser?.uid) as Users[];
+
+      setUsers(usersData);
+    };
     fetchUser();
-  },[])
-  const handleContactClick = (contact  : any) => {
-    setSelectedContact(contact)
-    setShowChat(true)
-  }
+  }, []);
+  const handleContactClick = (contact: any) => {
+    setSelectedContact(contact);
+    setShowChat(true);
+  };
 
   const handleBackToContacts = () => {
-    setShowChat(false)
-  }
+    setShowChat(false);
+  };
 
-    // Handle responsive behavior on screen resize
-    useEffect(() => {
-      const handleResize = () => {
-        if (window.innerWidth > 768) {
-          setShowChat(false)
-        } else {
-          setShowChat(false)
-        }
+  // Handle responsive behavior on screen resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 768) {
+        setShowChat(false);
+      } else {
+        setShowChat(false);
       }
-  
-      handleResize() // Set initial state based on current screen size
-      window.addEventListener('resize', handleResize)
-  
-      return () => {
-        window.removeEventListener('resize', handleResize)
-      }
-    }, [])
+    };
+
+    handleResize(); // Set initial state based on current screen size
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   return (
     <div className="flex h-screen bg-gradient-to-b from-gray-900 via-purple-900 to-gray-900 text-gray-100">
@@ -101,7 +199,7 @@ export default function ChatPage() {
         {(!showChat || window.innerWidth > 768) && (
           <motion.div
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 'auto', opacity: 1 }}
+            animate={{ width: "auto", opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.3 }}
             className="w-full md:w-1/3 lg:w-1/4 border-r border-purple-500/30 bg-gray-800/50 backdrop-blur-md"
@@ -116,7 +214,7 @@ export default function ChatPage() {
               {users.map((user) => (
                 <motion.div
                   key={user.uid}
-                  whileHover={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}
+                  whileHover={{ backgroundColor: "rgba(59, 130, 246, 0.1)" }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => handleContactClick(user)}
                   className="p-4 border-b border-purple-500/30 cursor-pointer"
@@ -129,7 +227,9 @@ export default function ChatPage() {
                     <div className="flex-grow">
                       <h3 className="font-semibold">{user.username}</h3>
                       {/* TODO:  set the last message display here  */}
-                      <p className="text-sm text-gray-400 truncate">No message to display</p>
+                      <p className="text-sm text-gray-400 truncate">
+                        No message to display
+                      </p>
                     </div>
                     {/* TODO set the unread messages count here.  */}
                     {/* {contacts.unreadCount > 0 && (
@@ -149,9 +249,9 @@ export default function ChatPage() {
       <AnimatePresence initial={false}>
         {(showChat || window.innerWidth > 768) && selectedContact && (
           <motion.div
-            initial={{ x: '100%', opacity: 0 }}
+            initial={{ x: "100%", opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={{ x: '100%', opacity: 0 }}
+            exit={{ x: "100%", opacity: 0 }}
             transition={{ duration: 0.3 }}
             className="flex flex-col w-full bg-gray-800/50 backdrop-blur-md"
           >
@@ -166,14 +266,23 @@ export default function ChatPage() {
                 <ChevronLeft className="w-6 h-6" />
               </Button>
               <Avatar className="w-10 h-10 mr-4">
-                <AvatarImage src={selectedContact.profilePic} alt={selectedContact.username} />
-                <AvatarFallback>{selectedContact.username.charAt(0)}</AvatarFallback>
+                <AvatarImage
+                  src={selectedContact.profilePic}
+                  alt={selectedContact.username}
+                />
+                <AvatarFallback>
+                  {selectedContact.username.charAt(0)}
+                </AvatarFallback>
               </Avatar>
               <div className="flex-grow">
                 <h2 className="font-semibold">{selectedContact.username}</h2>
                 <p className="text-sm text-gray-400">Online</p>
               </div>
-              <Button variant="ghost" size="icon" className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/50">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/50"
+              >
                 <MoreVertical className="w-5 h-5" />
               </Button>
             </div>
@@ -182,21 +291,25 @@ export default function ChatPage() {
             <ScrollArea className="flex-grow p-4">
               {messages.map((message) => (
                 <motion.div
-                  key={message.id}
+                  key={message?.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
-                  className={`mb-4 flex ${message.senderId === 'me' ? 'justify-end' : 'justify-start'}`}
+                  className={`mb-4 flex ${
+                    message.senderId === "me" ? "justify-end" : "justify-start"
+                  }`}
                 >
                   <div
                     className={`max-w-[70%] p-3 rounded-lg ${
-                      message.senderId === 'me'
-                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
-                        : 'bg-gray-700 text-gray-100'
+                      message.senderId === "me"
+                        ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+                        : "bg-gray-700 text-gray-100"
                     }`}
                   >
                     <p>{message.text}</p>
-                    <p className="text-xs text-gray-300 mt-1">{message.timestamp}</p>
+                    <p className="text-xs text-gray-300 mt-1">
+                      {message?.timestamp}
+                    </p>
                   </div>
                 </motion.div>
               ))}
@@ -205,17 +318,36 @@ export default function ChatPage() {
             {/* Message Input */}
             <div className="p-4 bg-gray-800/70 border-t border-purple-500/30">
               <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="icon" className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/50">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/50"
+                >
                   <Paperclip className="w-5 h-5" />
                 </Button>
                 <Input
                   placeholder="Type a message..."
                   className="flex-grow bg-gray-700 border-purple-500/30 focus:border-purple-500 focus:ring-purple-500"
+                  onChange={(e) => setMessage(e.target.value)}
+                  onClick={handleMessageSend}
+                  value={message}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleMessageSend();  // Send message when Enter is pressed
+                    }
+                  }}
                 />
-                <Button variant="ghost" size="icon" className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/50">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/50"
+                >
                   <Smile className="w-5 h-5" />
                 </Button>
-                <Button size="icon" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+                <Button
+                  size="icon"
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                >
                   <Send className="w-5 h-5" />
                 </Button>
               </div>
@@ -224,5 +356,5 @@ export default function ChatPage() {
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }
