@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { auth, provider } from "@/firebase/firebaseConfig"
+import { auth, db, provider } from "@/firebase/firebaseConfig"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { GoogleAuthProvider, reload, signInWithEmailAndPassword, signInWithPopup } from "firebase/auth"
+import { doc, getDoc } from "firebase/firestore"
+import { TableRowsSplitIcon } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
@@ -32,34 +34,74 @@ export default function Component() {
   }); 
 
 
-  const onSubmit = async(data: any) =>{
-  
-     await signInWithEmailAndPassword(auth, data.email, data.password).then((userCredentials)=>{
-        if(userCredentials.user.emailVerified){
-          toast.success("USER login Successfull"); 
-          router.push('/')
-          console.log("User is signed in");
-        }
-        else if(!userCredentials.user.emailVerified){
-          toast.error("Email not verified, click on link in verification email sent to verify."); 
-          setTimeout(()=>{
-            router.push("/signup"); 
-          },3000)
-
-        }
-     })
-
+  const checkUserExistenceInFirestore = async( uid: string) =>{
+    const userDocRef = doc(db, "users", uid); 
+     const userData = await getDoc(userDocRef);
+     return userData.exists(); 
   }
-
+  const onSubmit = async (data: any) => {
+    try {
+      // Attempt to sign in the user
+      const userCredentials = await signInWithEmailAndPassword(auth, data.email, data.password);
+      const uid = userCredentials.user.uid;
+  
+      // Check if the user exists in Firestore
+      const userExists = await checkUserExistenceInFirestore(uid);
+  
+      if (userExists) {
+        console.log("User found in Firestore database");
+        toast.success("User Sign-In successful");
+  
+        // Redirect to chat page
+        setTimeout(() => {
+          router.push('/chat');
+        }, 2000);
+      } else {
+        console.log("User not found in Firestore database");
+        toast.error("User not found in database. Please sign up first.");
+        
+        // Sign out the user since they don't exist in Firestore
+        await auth.signOut();
+  
+        // Redirect to signup page
+        setTimeout(() => {
+          router.push('/signup');
+        }, 2000);
+      }
+  
+    } catch (error: any) {
+      // Catch Firebase Authentication errors
+      if (error.code === 'auth/user-not-found') {
+        toast.error("No user found with this email. Please sign up.");
+      } else if (error.code === 'auth/wrong-password') {
+        toast.error("Incorrect password. Please try again.");
+      } else {
+        toast.error("Authentication failed. Please try again.");
+      }
+  
+      // Optionally log the error for debugging
+      console.error("Error during sign-in:", error);
+    }
+  }
   const handleGoogleLogin =  async() =>{
-          await signInWithPopup(auth, provider).then((result)=>{
-               const Credentials = GoogleAuthProvider.credentialFromResult(result);
-               const token = Credentials?.accessToken; 
-                const user = result.user;
-                alert("user signed In successfully") 
-          }).catch((err) =>{
-            alert("Log In using Google Auth Failed"); 
-          })
+       const result  =    await signInWithPopup(auth, provider); 
+       const user = result.user;
+       const checkUser = await checkUserExistenceInFirestore(user.uid); 
+       if(checkUser){
+        console.log("user found in db"); 
+        toast.success("google user sign in successfull"); 
+        setTimeout(() => {
+          router.push('/chat'); 
+        }, 2000);
+       }
+       else{
+        console.log("user signin failed"); 
+        toast.error('user not found. Sign up first');
+        auth.signOut(); 
+        setTimeout(() => {
+          router.push('/signup'); 
+        },2000)
+       }
   }
 
   const GoogleIcons = Icons['googleicon']; 

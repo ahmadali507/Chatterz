@@ -20,6 +20,8 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Icons } from "@/components/icons";
 import { UserCheck2Icon } from "lucide-react";
+import { doc, setDoc } from "firebase/firestore";
+import Link from "next/link";
 
 const SignUpSchema = z.object({
   username: z.string().min(1, "The username is required"),
@@ -79,6 +81,25 @@ export default function Component() {
       );
       console.log("User created:", userCredentials.user);
 
+      // adding hte user to the firestore 
+
+      await setDoc(doc(db, "users", userCredentials.user.uid), {
+        email : data.email, 
+        username : data.username, 
+        password : data.password,
+        profilePic : null, 
+        uid : userCredentials.user.uid, 
+        createdAt : new Date().toISOString(), 
+        // emailVerified : null,
+      }).then(()=>{
+        console.log("user added to db successfully")
+        toast.success("User signed up successfully"); 
+      }).catch((error)=>{
+        console.log("Error addding user to the db", error); 
+      })
+      
+      
+
       // await sendEmailVerification(userCredentials.user)
       //   .then(() => {
       //     setVerificationEmailSent(true);
@@ -104,6 +125,22 @@ export default function Component() {
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
+
+      await setDoc(doc(db, "users", user.uid), {
+        email : user.email, 
+        username : user.displayName || "google user", 
+        profilePic : user.photoURL, 
+        uid : user.uid, 
+        createdAt : new Date().toISOString(), 
+        provider : "google", 
+        // emailVerified : null,
+      }, {merge : true}).then(()=>{
+        console.log("user added to db successfully")
+        toast.success("User signed up successfully"); 
+      }).catch((error)=>{
+        console.log("Error addding user to the db", error); 
+      })
+      
       console.log("Google Sign-In successful:", user);
       toast.success("Signed in with Google successfully!");
       router.push("/");
@@ -192,6 +229,10 @@ export default function Component() {
             Sign up with Google
           </Button>
         </div>
+
+          <div className = "text-center">
+            <p className="text-gray-300">Already have an account? <Link href='/login' className = "text-teal-300  font-bold underline"> SignIn </Link></p>
+          </div>
       </div>
     </div>
   );
