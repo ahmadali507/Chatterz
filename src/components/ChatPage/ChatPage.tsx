@@ -15,6 +15,8 @@ import {
   Paperclip,
   Smile,
 } from 'lucide-react'
+import { collection, doc, getDoc, getDocs } from 'firebase/firestore'
+import { auth, db } from '@/firebase/firebaseConfig'
 
 // Mock data for contacts and messages
 const contacts = [
@@ -34,15 +36,37 @@ const messages = [
 ]
 
 type selectedContact = {
-  name : string, 
-  avatar : string, 
+  username : string, 
+  profilePic ?: string, 
   lastMessage ?: string,
   unreadCount ?: number, 
 }
+type Users = {
+  username: string, 
+  email : string, 
+  uid : string, 
+  profilePic ?: string, 
+}
 export default function ChatPage() {
   const [selectedContact, setSelectedContact] = useState<selectedContact | null>(null)
+  const [users, setUsers] = useState<Users[]>([]);
   const [showChat, setShowChat] = useState(false)
 
+  const currentUser = auth.currentUser; 
+  console.log(currentUser); 
+  useEffect(()=>{
+    const fetchUser = async () =>{
+      // const query = collection(db,"users"); 
+      const querySnapshot = await getDocs(collection(db,"users"));
+      const usersData: Users[] =  querySnapshot.docs.map((doc)=>({
+        uid : doc.id, 
+        ...doc.data(), 
+      })).filter((user) => user.uid !== currentUser?.uid) as Users[]; 
+      
+      setUsers(usersData); 
+    } 
+    fetchUser();
+  },[])
   const handleContactClick = (contact  : any) => {
     setSelectedContact(contact)
     setShowChat(true)
@@ -89,28 +113,30 @@ export default function ChatPage() {
               </h2>
             </div>
             <ScrollArea className="h-[calc(100vh-4rem)]">
-              {contacts.map((contact) => (
+              {users.map((user) => (
                 <motion.div
-                  key={contact.id}
+                  key={user.uid}
                   whileHover={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => handleContactClick(contact)}
+                  onClick={() => handleContactClick(user)}
                   className="p-4 border-b border-purple-500/30 cursor-pointer"
                 >
                   <div className="flex items-center">
                     <Avatar className="w-12 h-12 mr-4">
-                      <AvatarImage src={contact.avatar} alt={contact.name} />
-                      <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
+                      <AvatarImage src={user.profilePic} alt={user.username} />
+                      <AvatarFallback>{user.username.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-grow">
-                      <h3 className="font-semibold">{contact.name}</h3>
-                      <p className="text-sm text-gray-400 truncate">{contact.lastMessage}</p>
+                      <h3 className="font-semibold">{user.username}</h3>
+                      {/* TODO:  set the last message display here  */}
+                      <p className="text-sm text-gray-400 truncate">No message to display</p>
                     </div>
-                    {contact.unreadCount > 0 && (
+                    {/* TODO set the unread messages count here.  */}
+                    {/* {contacts.unreadCount > 0 && (
                       <Badge className="ml-2 bg-gradient-to-r from-blue-500 to-purple-600">
                         {contact.unreadCount}
                       </Badge>
-                    )}
+                    )} */}
                   </div>
                 </motion.div>
               ))}
@@ -140,11 +166,11 @@ export default function ChatPage() {
                 <ChevronLeft className="w-6 h-6" />
               </Button>
               <Avatar className="w-10 h-10 mr-4">
-                <AvatarImage src={selectedContact.avatar} alt={selectedContact.name} />
-                <AvatarFallback>{selectedContact.name.charAt(0)}</AvatarFallback>
+                <AvatarImage src={selectedContact.profilePic} alt={selectedContact.username} />
+                <AvatarFallback>{selectedContact.username.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="flex-grow">
-                <h2 className="font-semibold">{selectedContact.name}</h2>
+                <h2 className="font-semibold">{selectedContact.username}</h2>
                 <p className="text-sm text-gray-400">Online</p>
               </div>
               <Button variant="ghost" size="icon" className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/50">
