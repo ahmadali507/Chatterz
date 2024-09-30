@@ -34,208 +34,210 @@ import { onAuthStateChanged } from "firebase/auth";
 
 export default function ChatPage() {
   const [selectedContact, setSelectedContact] =
-    useState<selectedContact | null>(null);
-  const [users, setUsers] = useState<Users[]>([]);
-  const [showChat, setShowChat] = useState(false);
-  const [message, setMessage] = useState<string>("");
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [chatid, setChatId] = useState<string>("");
-  const [currentUser, setCurrentUser] = useState(auth.currentUser);
+  useState<selectedContact | null>(null);
+const [users, setUsers] = useState<Users[]>([]);
+const [showChat, setShowChat] = useState(false);
+const [message, setMessage] = useState<string>("");
+const [messages, setMessages] = useState<Message[]>([]);
+const [chatid, setChatId] = useState<string>("");
+const [currentUser, setCurrentUser] = useState(auth.currentUser);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setCurrentUser(user);
-      } else {
-        toast.error("User not authenticated");
-        setCurrentUser(null);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-  // const currentUser = auth.currentUser;
-  console.log(currentUser);
-
-  useEffect(() => {
-    if (!currentUser) {
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, (user) => {
+    if (user) {
+      setCurrentUser(user);
+    } else {
       toast.error("User not authenticated");
-      return;
+      setCurrentUser(null);
     }
-  }, [currentUser]);
+  });
+  return () => unsubscribe();
+}, []);
 
-  const createChat = async () => {
-    if (!currentUser || !selectedContact) {
-      toast.error("Select a contact or ensure you're logged in");
-      return;
+useEffect(() => {
+  if (!currentUser) {
+    toast.error("User not authenticated");
+    return;
+  }
+}, [currentUser]);
+
+const createChatId = (id1: string, id2: string): string => {
+  return [id1, id2]
+    .sort((a, b) => a.localeCompare(b)) // Sort the IDs
+    .join("_"); // Join them with an underscore
+};
+
+const createChat = async () => {
+  if (!currentUser || !selectedContact) {
+    toast.error("Select a contact or ensure you're logged in");
+    return;
+  }
+  const chatId = createChatId(currentUser?.uid, selectedContact?.uid);
+  setChatId(chatId);
+  const chatRef = doc(db, "chats", chatId);
+  const chatDoc = await getDoc(chatRef);
+  // Check if the chat already exists
+  if (!chatDoc.exists()) {
+    await setDoc(chatRef, {
+      participants: [currentUser.uid, selectedContact.uid],
+      lastMessage: "",
+      lastMessagetimeStamp: null,
+      unreadCount: 0,
+    });
+  }
+};
+
+const handleMessageSend = async () => {
+  if (!message || !chatid) {
+    toast.warning("Type something first");
+    return;
+  }
+
+  try {
+    console.log("Chat ID:", chatid); // Log chat ID
+
+    // Ensure chatid is valid before proceeding
+    if (!chatid || chatid.trim() === "") {
+      throw new Error("Chat ID is not set correctly.");
     }
-    const chatId = [currentUser?.uid, selectedContact?.uid].sort().join("_");
-    setChatId(chatId);
-    const chatRef = doc(db, "chats", chatId);
+
+    const chatRef = doc(db, "chats", chatid);
     const chatDoc = await getDoc(chatRef);
+
     // Check if the chat already exists
     if (!chatDoc.exists()) {
       await setDoc(chatRef, {
-        participants: [currentUser.uid, selectedContact.uid],
+        participants: [currentUser?.uid, selectedContact?.uid],
         lastMessage: "",
         lastMessagetimeStamp: null,
         unreadCount: 0,
       });
     }
-  };
 
-  const handleMessageSend = async () => {
-    if (!message || !chatid) {
-      toast.warning("Type something first");
-      return;
-    }
-
-    try {
-      console.log("Chat ID:", chatid); // Log chat ID
-
-      // Ensure chatid is valid before proceeding
-      if (!chatid || chatid.trim() === "") {
-        throw new Error("Chat ID is not set correctly.");
-      }
-
-      const chatRef = doc(db, "chats", chatid);
-      const chatDoc = await getDoc(chatRef);
-
-      // Check if the chat already exists
-      if (!chatDoc.exists()) {
-        await setDoc(chatRef, {
-          participants: [currentUser?.uid, selectedContact?.uid],
-          lastMessage: "",
-          lastMessagetimeStamp: null,
-          unreadCount: 0,
-        });
-      }
-
-      // Add message to the chat
-      await addDoc(collection(db, "chats", chatid, "messages"), {
-        senderId: currentUser?.uid,
-        receiverId: selectedContact?.uid,
-        text: message,
-        timestamp: new Date().toISOString(),
-        read: false,
-      });
-
-      // Update last message details in the chat document
-      await updateDoc(doc(db, "chats", chatid), {
-        lastMessage: message,
-        lastMessageTimeStamp: new Date().toISOString(),
-        unreadCount: 10, // Update as per your logic
-      });
-
-      setMessage(""); // Reset message input
-    } catch (error: any) {
-      if (error instanceof FirebaseError) {
-        toast.error(`Error sending message: ${error.message}`);
-      } else {
-        toast.error(`Unexpected error: ${error.message}`);
-      }
-    }
-  };
-
-  // 2. Function to fetch messages based on chatid
-  const fetchMessages = async (
-    chatid: string
-  ): Promise<Message[] | undefined> => {
-    if (!chatid || chatid.trim() === "") {
-      console.error("Invalid chat ID provided.");
-      return;
-    }
-
-    try {
-      const messagesRef = collection(db, "chats", chatid, "messages");
-      const messagesSnapshot = await getDocs(messagesRef);
-      const messagesData: Message[] = messagesSnapshot.docs.map((doc) => ({
-        ...doc.data(),
-      })) as Message[];
-
-      return messagesData;
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      return undefined;
-    }
-  };
-
-  // 3. useEffect to fetch messages when chatid changes
-  useEffect(() => {
-    if (!chatid || chatid.trim() === "") {
-      console.error("Chat ID is not valid in useEffect.");
-      return;
-    }
-
-    const fetchMessageData = async () => {
-      const loadMessages = await fetchMessages(chatid);
-      if (loadMessages) {
-        setMessages(loadMessages);
-      }
-    };
-
-    fetchMessageData();
-  }, [chatid]);
-
-  // 4. Subscribe to real-time updates for the selected chat
-  useEffect(() => {
-    if (!chatid || chatid.trim() === "") {
-      return;
-    }
-    const messageRef = collection(db, "chats", chatid, "messages");
-    const messageQuery = query(messageRef, orderBy("timestamp", "asc"));
-    const unsubscribe = onSnapshot(messageQuery, (snapshot) => {
-      const messagesData: Message[] = snapshot.docs.map((doc) => ({
-        ...doc.data(),
-      })) as Message[];
-      setMessages(messagesData);
+    // Add message to the chat
+    await addDoc(collection(db, "chats", chatid, "messages"), {
+      senderId: currentUser?.uid,
+      receiverId: selectedContact?.uid,
+      text: message,
+      timestamp: new Date().toISOString(),
+      read: false,
     });
 
-    return () => unsubscribe(); // Cleanup on unmount
-  }, [chatid]);
+    // Update last message details in the chat document
+    await updateDoc(doc(db, "chats", chatid), {
+      lastMessage: message,
+      lastMessageTimeStamp: new Date().toISOString(),
+      unreadCount: 10, // Update as per your logic
+    });
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const querySnapshot = await getDocs(collection(db, "users"));
-      const usersData: Users[] = querySnapshot.docs
-        .map((doc) => ({
-          uid: doc.id,
-          ...doc.data(),
-        }))
-        .filter((user) => user.uid !== currentUser?.uid) as Users[];
+    setMessage(""); // Reset message input
+  } catch (error: any) {
+    if (error instanceof FirebaseError) {
+      toast.error(`Error sending message: ${error.message}`);
+    } else {
+      toast.error(`Unexpected error: ${error.message}`);
+    }
+  }
+};
 
-      setUsers(usersData);
-    };
-    fetchUser();
-  }, [currentUser]);
+// 2. Function to fetch messages based on chatid
+const fetchMessages = async (
+  chatid: string
+): Promise<Message[] | undefined> => {
+  if (!chatid || chatid.trim() === "") {
+    console.error("Invalid chat ID provided.");
+    return;
+  }
 
-  const handleContactClick = async (contact: Users) => {
-    setSelectedContact(contact);
-    setChatId([currentUser?.uid, selectedContact?.uid].sort().join("_"));
-    setShowChat(true);
-    console.log(currentUser);
-    console.log(selectedContact);
-    console.log(chatid);
-    await createChat();
+  try {
+    const messagesRef = collection(db, "chats", chatid, "messages");
+    const messagesSnapshot = await getDocs(messagesRef);
+    const messagesData: Message[] = messagesSnapshot.docs.map((doc) => ({
+      ...doc.data(),
+    })) as Message[];
+
+    return messagesData;
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    return undefined;
+  }
+};
+
+// 3. useEffect to fetch messages when chatid changes
+useEffect(() => {
+  if (!chatid || chatid.trim() === "") {
+    console.error("Chat ID is not valid in useEffect.");
+    return;
+  }
+
+  const fetchMessageData = async () => {
+    const loadMessages = await fetchMessages(chatid);
+    if (loadMessages) {
+      setMessages(loadMessages);
+    }
   };
 
-  const handleBackToContacts = () => {
-    setShowChat(false);
+  fetchMessageData();
+}, [chatid]);
+
+// 4. Subscribe to real-time updates for the selected chat
+useEffect(() => {
+  if (!chatid || chatid.trim() === "") {
+    return;
+  }
+  const messageRef = collection(db, "chats", chatid, "messages");
+  const messageQuery = query(messageRef, orderBy("timestamp", "asc"));
+  const unsubscribe = onSnapshot(messageQuery, (snapshot) => {
+    const messagesData: Message[] = snapshot.docs.map((doc) => ({
+      ...doc.data(),
+    })) as Message[];
+    setMessages(messagesData);
+  });
+
+  return () => unsubscribe(); // Cleanup on unmount
+}, [chatid]);
+
+useEffect(() => {
+  const fetchUser = async () => {
+    const querySnapshot = await getDocs(collection(db, "users"));
+    const usersData: Users[] = querySnapshot.docs
+      .map((doc) => ({
+        uid: doc.id,
+        ...doc.data(),
+      }))
+      .filter((user) => user.uid !== currentUser?.uid) as Users[];
+
+    setUsers(usersData);
+  };
+  fetchUser();
+}, [currentUser]);
+
+const handleContactClick = async (contact: Users) => {
+  setSelectedContact(contact);
+  const chatId = createChatId(currentUser?.uid as string, contact?.uid); // Use new chat ID generation logic
+  setChatId(chatId);
+  setShowChat(true);
+  await createChat();
+};
+
+const handleBackToContacts = () => {
+  setShowChat(false);
+};
+
+useEffect(() => {
+  const handleResize = () => {
+    if (window.innerWidth > 768) {
+      setShowChat(false);
+    }
   };
 
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth > 768) {
-        setShowChat(false);
-      }
-    };
+  handleResize();
+  window.addEventListener("resize", handleResize);
 
-    handleResize();
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
+  return () => {
+    window.removeEventListener("resize", handleResize);
+  };
+}, []);
 
   return (
     <div className="flex h-screen bg-gradient-to-b from-gray-900 via-purple-900 to-gray-900 text-gray-100">
