@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { MessageCircle, Zap, Lock, Globe, Users, BarChart, Star, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FeatureCardType , StatCardType } from '@/types/types'
+import Footer from '../landingPage/Footer'
+import Header from '../landingPage/Header'
 
 const FeatureCard = ({ icon, title, description } : FeatureCardType) => (
   <motion.div
@@ -65,6 +67,8 @@ export default function AboutSection() {
   }
 
   return (
+    <>
+    <Header/>
     <section id="about" className="py-16 px-4 md:px-8 bg-gradient-to-b from-gray-950 via-purple-950/20 to-gray-950">
       <div className="max-w-6xl mx-auto">
         <motion.div
@@ -212,5 +216,7 @@ export default function AboutSection() {
         </motion.div>
       </div>
     </section>
+    <Footer/>
+    </>
   )
 }

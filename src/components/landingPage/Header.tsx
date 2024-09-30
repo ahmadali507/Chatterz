@@ -41,7 +41,7 @@ const Header = () => {
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-  const navItems = ["Features", "Pricing", "Testimonials", "FAQ"];
+  const navItems = ["Features", "Pricing", "About", "FAQ"];
 
   return (
     <>
@@ -57,10 +57,12 @@ const Header = () => {
           transition={{ duration: 0.5 }}
           className="flex items-center space-x-2"
         >
+          <Link href="/" className="flex flex-row gap-4">
           <MessageCircle className="w-8 h-8 text-blue-500" />
           <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
             Chatterz
           </span>
+          </Link>
         </motion.div>
         <nav className="flex items-center space-x-4">
           <motion.button
@@ -82,10 +84,13 @@ const Header = () => {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
                 <Link
-                  href={`#${item.toLowerCase()}`}
+                  href={`/${item.toLowerCase()}`}
                   scroll={false}
                   onClick={(e) => {
-                    e.preventDefault();
+                    // e.preventDefault();
+                    if(item.toLowerCase() !== "about"){
+                      e.preventDefault(); 
+                    }
                     handleScroll(item.toLowerCase());
                   }}
                   className="hover:text-blue-400"
