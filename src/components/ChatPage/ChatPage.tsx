@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   MessageCircle,
   Send,
@@ -21,6 +20,9 @@ import {
   doc,
   getDoc,
   getDocs,
+  onSnapshot,
+  orderBy,
+  query,
   setDoc,
   updateDoc,
 } from "firebase/firestore";
@@ -28,98 +30,52 @@ import { auth, db } from "@/firebase/firebaseConfig";
 import { Message, selectedContact, Users } from "@/types/types";
 import { toast } from "sonner";
 import { FirebaseError } from "firebase/app";
-
-// Mock data for contacts and messages
-const contacts = [
-  {
-    id: 1,
-    name: "Alice Johnson",
-    avatar: "/placeholder.svg",
-    lastMessage: "Hey, how are you?",
-    unreadCount: 2,
-  },
-  {
-    id: 2,
-    name: "Bob Smith",
-    avatar: "/placeholder.svg",
-    lastMessage: "Can we schedule a meeting?",
-    unreadCount: 0,
-  },
-  {
-    id: 3,
-    name: "Charlie Brown",
-    avatar: "/placeholder.svg",
-    lastMessage: "I have sent you the files.",
-    unreadCount: 1,
-  },
-  {
-    id: 4,
-    name: "Diana Prince",
-    avatar: "/placeholder.svg",
-    lastMessage: "Thanks for your help!",
-    unreadCount: 0,
-  },
-  {
-    id: 5,
-    name: "Ethan Hunt",
-    avatar: "/placeholder.svg",
-    lastMessage: "Mission accomplished!",
-    unreadCount: 3,
-  },
-];
-
-const messages = [
-  { id: 1, senderId: 1, text: "Hey, how are you?", timestamp: "10:00 AM" },
-  {
-    id: 2,
-    senderId: "me",
-    text: "Im doing great, thanks! How about you?",
-    timestamp: "10:02 AM",
-  },
-  {
-    id: 3,
-    senderId: 1,
-    text: "I am good too. Did you finish the project?",
-    timestamp: "10:05 AM",
-  },
-  {
-    id: 4,
-    senderId: "me",
-    text: "Yes, I just sent you the final version. Can you check it?",
-    timestamp: "10:08 AM",
-  },
-  {
-    id: 5,
-    senderId: 1,
-    text: "Sure, I will take a look right away.",
-    timestamp: "10:10 AM",
-  },
-];
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function ChatPage() {
   const [selectedContact, setSelectedContact] =
     useState<selectedContact | null>(null);
   const [users, setUsers] = useState<Users[]>([]);
   const [showChat, setShowChat] = useState(false);
-
-  ////////////////// now creating states for message sendding and receiving//////////////////
-  const [message, setMessage] = useState<string>();
+  const [message, setMessage] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatid, setChatId] = useState<string>("");
+  const [currentUser, setCurrentUser] = useState(auth.currentUser);
 
   useEffect(() => {
-    const fetchMessages = async () => {};
-  });
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setCurrentUser(user);
+      } else {
+        toast.error("User not authenticated");
+        setCurrentUser(null);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+  // const currentUser = auth.currentUser;
+  console.log(currentUser);
+
+  useEffect(() => {
+    if (!currentUser) {
+      toast.error("User not authenticated");
+      return;
+    }
+  }, [currentUser]);
 
   const createChat = async () => {
-    const chatId = `${currentUser?.uid}_${selectedContact?.uid}`;
-    setChatId(chatId as string);
-    const chatRef = doc(db, "chats", chatid);
-    // check whether the chat exists already ... or not ...
-    const checkchat = await getDoc(chatRef);
-    if (!checkchat) {
+    if (!currentUser || !selectedContact) {
+      toast.error("Select a contact or ensure you're logged in");
+      return;
+    }
+    const chatId = [currentUser?.uid, selectedContact?.uid].sort().join("_");
+    setChatId(chatId);
+    const chatRef = doc(db, "chats", chatId);
+    const chatDoc = await getDoc(chatRef);
+    // Check if the chat already exists
+    if (!chatDoc.exists()) {
       await setDoc(chatRef, {
-        participants: [currentUser?.uid, selectedContact?.uid],
+        participants: [currentUser.uid, selectedContact.uid],
         lastMessage: "",
         lastMessagetimeStamp: null,
         unreadCount: 0,
@@ -129,30 +85,116 @@ export default function ChatPage() {
 
   const handleMessageSend = async () => {
     if (!message || !chatid) {
-      toast.warning("type Something first");
+      toast.warning("Type something first");
       return;
     }
-    await addDoc(collection(db, "chats", chatid, "messages"), {
-      senderId: currentUser?.uid,
-      receiverId: selectedContact?.uid,
-      text: message,
-      timestamp: new Date().toISOString(),
-      read: false,
-    });
 
-    await updateDoc(doc(db, "chats", chatid), {
-      lastMessage: message,
-      lastMessageTimeStamp: new Date().toISOString(),
-      unreadCount: 10,
-    });
-    setMessage("");
+    try {
+      console.log("Chat ID:", chatid); // Log chat ID
+
+      // Ensure chatid is valid before proceeding
+      if (!chatid || chatid.trim() === "") {
+        throw new Error("Chat ID is not set correctly.");
+      }
+
+      const chatRef = doc(db, "chats", chatid);
+      const chatDoc = await getDoc(chatRef);
+
+      // Check if the chat already exists
+      if (!chatDoc.exists()) {
+        await setDoc(chatRef, {
+          participants: [currentUser?.uid, selectedContact?.uid],
+          lastMessage: "",
+          lastMessagetimeStamp: null,
+          unreadCount: 0,
+        });
+      }
+
+      // Add message to the chat
+      await addDoc(collection(db, "chats", chatid, "messages"), {
+        senderId: currentUser?.uid,
+        receiverId: selectedContact?.uid,
+        text: message,
+        timestamp: new Date().toISOString(),
+        read: false,
+      });
+
+      // Update last message details in the chat document
+      await updateDoc(doc(db, "chats", chatid), {
+        lastMessage: message,
+        lastMessageTimeStamp: new Date().toISOString(),
+        unreadCount: 10, // Update as per your logic
+      });
+
+      setMessage(""); // Reset message input
+    } catch (error: any) {
+      if (error instanceof FirebaseError) {
+        toast.error(`Error sending message: ${error.message}`);
+      } else {
+        toast.error(`Unexpected error: ${error.message}`);
+      }
+    }
   };
 
-  const currentUser = auth.currentUser;
-  console.log(currentUser);
+  // 2. Function to fetch messages based on chatid
+  const fetchMessages = async (
+    chatid: string
+  ): Promise<Message[] | undefined> => {
+    if (!chatid || chatid.trim() === "") {
+      console.error("Invalid chat ID provided.");
+      return;
+    }
+
+    try {
+      const messagesRef = collection(db, "chats", chatid, "messages");
+      const messagesSnapshot = await getDocs(messagesRef);
+      const messagesData: Message[] = messagesSnapshot.docs.map((doc) => ({
+        ...doc.data(),
+      })) as Message[];
+
+      return messagesData;
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      return undefined;
+    }
+  };
+
+  // 3. useEffect to fetch messages when chatid changes
+  useEffect(() => {
+    if (!chatid || chatid.trim() === "") {
+      console.error("Chat ID is not valid in useEffect.");
+      return;
+    }
+
+    const fetchMessageData = async () => {
+      const loadMessages = await fetchMessages(chatid);
+      if (loadMessages) {
+        setMessages(loadMessages);
+      }
+    };
+
+    fetchMessageData();
+  }, [chatid]);
+
+  // 4. Subscribe to real-time updates for the selected chat
+  useEffect(() => {
+    if (!chatid || chatid.trim() === "") {
+      return;
+    }
+    const messageRef = collection(db, "chats", chatid, "messages");
+    const messageQuery = query(messageRef, orderBy("timestamp", "asc"));
+    const unsubscribe = onSnapshot(messageQuery, (snapshot) => {
+      const messagesData: Message[] = snapshot.docs.map((doc) => ({
+        ...doc.data(),
+      })) as Message[];
+      setMessages(messagesData);
+    });
+
+    return () => unsubscribe(); // Cleanup on unmount
+  }, [chatid]);
+
   useEffect(() => {
     const fetchUser = async () => {
-      // const query = collection(db,"users");
       const querySnapshot = await getDocs(collection(db, "users"));
       const usersData: Users[] = querySnapshot.docs
         .map((doc) => ({
@@ -164,27 +206,30 @@ export default function ChatPage() {
       setUsers(usersData);
     };
     fetchUser();
-  }, []);
-  const handleContactClick = (contact: any) => {
+  }, [currentUser]);
+
+  const handleContactClick = async (contact: Users) => {
     setSelectedContact(contact);
+    setChatId([currentUser?.uid, selectedContact?.uid].sort().join("_"));
     setShowChat(true);
+    console.log(currentUser);
+    console.log(selectedContact);
+    console.log(chatid);
+    await createChat();
   };
 
   const handleBackToContacts = () => {
     setShowChat(false);
   };
 
-  // Handle responsive behavior on screen resize
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth > 768) {
         setShowChat(false);
-      } else {
-        setShowChat(false);
       }
     };
 
-    handleResize(); // Set initial state based on current screen size
+    handleResize();
     window.addEventListener("resize", handleResize);
 
     return () => {
@@ -194,7 +239,6 @@ export default function ChatPage() {
 
   return (
     <div className="flex h-screen bg-gradient-to-b from-gray-900 via-purple-900 to-gray-900 text-gray-100">
-      {/* Contact List */}
       <AnimatePresence initial={false}>
         {(!showChat || window.innerWidth > 768) && (
           <motion.div
@@ -226,17 +270,10 @@ export default function ChatPage() {
                     </Avatar>
                     <div className="flex-grow">
                       <h3 className="font-semibold">{user.username}</h3>
-                      {/* TODO:  set the last message display here  */}
                       <p className="text-sm text-gray-400 truncate">
                         No message to display
                       </p>
                     </div>
-                    {/* TODO set the unread messages count here.  */}
-                    {/* {contacts.unreadCount > 0 && (
-                      <Badge className="ml-2 bg-gradient-to-r from-blue-500 to-purple-600">
-                        {contact.unreadCount}
-                      </Badge>
-                    )} */}
                   </div>
                 </motion.div>
               ))}
@@ -245,7 +282,6 @@ export default function ChatPage() {
         )}
       </AnimatePresence>
 
-      {/* Chat Box */}
       <AnimatePresence initial={false}>
         {(showChat || window.innerWidth > 768) && selectedContact && (
           <motion.div
@@ -255,7 +291,6 @@ export default function ChatPage() {
             transition={{ duration: 0.3 }}
             className="flex flex-col w-full bg-gray-800/50 backdrop-blur-md"
           >
-            {/* Chat Header */}
             <div className="p-4 bg-gray-800/70 flex items-center border-b border-purple-500/30">
               <Button
                 variant="ghost"
@@ -274,50 +309,48 @@ export default function ChatPage() {
                   {selectedContact.username.charAt(0)}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-grow">
-                <h2 className="font-semibold">{selectedContact.username}</h2>
-                <p className="text-sm text-gray-400">Online</p>
-              </div>
+              <h2 className="text-lg font-bold">{selectedContact.username}</h2>
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/50"
+                className="ml-auto text-blue-400 hover:text-blue-300 hover:bg-blue-900/50"
               >
-                <MoreVertical className="w-5 h-5" />
+                <MoreVertical className="w-6 h-6" />
               </Button>
             </div>
 
-            {/* Messages */}
             <ScrollArea className="flex-grow p-4">
-              {messages.map((message) => (
-                <motion.div
-                  key={message?.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className={`mb-4 flex ${
-                    message.senderId === "me" ? "justify-end" : "justify-start"
-                  }`}
-                >
+              {messages.length > 0 ? (
+                messages.map((msg, index) => (
                   <div
-                    className={`max-w-[70%] p-3 rounded-lg ${
-                      message.senderId === "me"
-                        ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
-                        : "bg-gray-700 text-gray-100"
+                    key={index}
+                    className={`mb-2 p-3 rounded-lg w-fit max-w-[60%] flex flex-col ${
+                      msg.senderId === currentUser?.uid
+                        ? "bg-blue-500 text-white self-end ml-auto"
+                        : "bg-gray-700 text-gray-300"
                     }`}
                   >
-                    <p>{message.text}</p>
-                    <p className="text-xs text-gray-300 mt-1">
-                      {message?.timestamp}
-                    </p>
+                    {/* Message Text */}
+                    <div>{msg.text}</div>
+
+                    {/* Displaying the timestamp at the bottom right */}
+                    <div className="text-xs text-gray-400 mt-1 self-end">
+                      {msg?.timeStamp
+                        ? new Date(msg.timeStamp).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "Invalid Date"}
+                    </div>
                   </div>
-                </motion.div>
-              ))}
+                ))
+              ) : (
+                <p className="text-center text-gray-400">No messages yet.</p>
+              )}
             </ScrollArea>
 
-            {/* Message Input */}
             <div className="p-4 bg-gray-800/70 border-t border-purple-500/30">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -325,18 +358,6 @@ export default function ChatPage() {
                 >
                   <Paperclip className="w-5 h-5" />
                 </Button>
-                <Input
-                  placeholder="Type a message..."
-                  className="flex-grow bg-gray-700 border-purple-500/30 focus:border-purple-500 focus:ring-purple-500"
-                  onChange={(e) => setMessage(e.target.value)}
-                  onClick={handleMessageSend}
-                  value={message}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleMessageSend();  // Send message when Enter is pressed
-                    }
-                  }}
-                />
                 <Button
                   variant="ghost"
                   size="icon"
@@ -344,9 +365,22 @@ export default function ChatPage() {
                 >
                   <Smile className="w-5 h-5" />
                 </Button>
+                <Input
+                  className="flex-grow mx-4 bg-gray-800/30 border-gray-700 text-gray-300"
+                  placeholder="Type a message..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleMessageSend();
+                    }
+                  }}
+                />
                 <Button
+                  variant="ghost"
                   size="icon"
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                  className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/50"
+                  onClick={handleMessageSend}
                 >
                   <Send className="w-5 h-5" />
                 </Button>
