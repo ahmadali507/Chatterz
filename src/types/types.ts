@@ -1,3 +1,4 @@
+
 export type selectedContact = {
     uid : string,
     username : string, 
@@ -27,4 +28,16 @@ export type selectedContact = {
     unreadCount : number,
     messages ?: Message[], 
     lastMessageTimeStamp : string, 
+  }
+
+  export type FeatureCardType = {
+    icon : any, 
+    title : string,
+    description : string, 
+  }
+
+  export type StatCardType = {
+    icon : any, 
+    value : number | string, 
+    label : string, 
   }
