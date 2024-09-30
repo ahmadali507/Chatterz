@@ -17,7 +17,7 @@ export type selectedContact = {
     senderId : string, 
     receiverId : string, 
     text : string,
-    timeStamp : string, 
+    timestamp : string, 
     read ?: Boolean, 
   }
 
