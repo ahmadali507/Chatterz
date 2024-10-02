@@ -4,11 +4,30 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LogIn, MessageCircle, UserPlus, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { Auth, onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/firebase/firebaseConfig";
 
 const Header = () => {
   const controls = useAnimation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [currentUser, setCurrentUser] = useState(auth.currentUser || null);
+
+  useEffect(()=>{
+    const myUser = onAuthStateChanged(auth, (user)=>{
+      if(user){
+        setCurrentUser(user)
+      }
+      else {
+        setCurrentUser(null); 
+      }
+    }); 
+    return ()=>myUser(); 
+  }, [currentUser])
+  
+  
+
+
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
