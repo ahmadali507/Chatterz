@@ -86,8 +86,8 @@ export default function ChatPage() {
   }, [messages]);
 
   const createChat = async () => {
-    console.log(currentUser);
-    console.log(selectedContact);
+    // console.log(currentUser);
+    // console.log(selectedContact);
     if (!currentUser || !selectedContact) {
       toast.error("Select a contact or ensure you're logged in");
       return;
@@ -214,7 +214,7 @@ export default function ChatPage() {
       setMessages(messagesData);
     });
 
-    return () => unsubscribe(); // Cleanup on unmount
+    return () => unsubscribe(); 
   }, [chatid]);
 
   useEffect(() => {
@@ -232,13 +232,29 @@ export default function ChatPage() {
     fetchUser();
   }, [currentUser]);
 
-  const handleContactClick = async (contact: Users) => {
-    setSelectedContact(contact);
-    console.log(selectedContact);
-    const chatId = createChatId(currentUser?.uid as string, contact?.uid); // Use new chat ID generation logic
-    setChatId(chatId);
-    setShowChat(true);
-    await createChat();
+  // const handleContactClick = async (contact: Users) => {
+  //   setSelectedContact(contact);
+  //   console.log(selectedContact?.username);
+  //   const chatId = createChatId(currentUser?.uid as string, contact?.uid); // Use new chat ID generation logic
+  //   setChatId(chatId);
+  //   console.log(chatId); 
+  //   setShowChat(true);
+  //   await createChat();
+  // };
+
+  useEffect(() => {
+    if (selectedContact) {
+      const chatId = createChatId(currentUser?.uid as string, selectedContact?.uid);
+      setChatId(chatId);  // Set chat ID after selectedContact is set
+      console.log(selectedContact?.username);
+      console.log(chatId);
+      setShowChat(true);
+      createChat();  // Create the chat after the contact is selected
+    }
+  }, [selectedContact]); // Trigger useEffect when selectedContact changes
+  
+  const handleContactClick = (contact: Users) => {
+    setSelectedContact(contact); // This will trigger the useEffect
   };
 
   const handleBackToContacts = () => {
