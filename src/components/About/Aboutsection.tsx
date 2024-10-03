@@ -69,8 +69,8 @@ export default function AboutSection() {
   return (
     <>
     <Header/>
-    <section id="about" className="py-16 px-4 md:px-8 bg-gradient-to-b from-gray-950 via-purple-950/20 to-gray-950">
-      <div className="max-w-6xl mx-auto">
+    <section id="about" className=" py-16 px-4 md:px-8 bg-gradient-to-b from-gray-950 via-purple-950/20 to-gray-950">
+      <div className="mt-12 max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

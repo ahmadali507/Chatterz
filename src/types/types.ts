@@ -12,6 +12,10 @@ export type selectedContact = {
     uid : string, 
     profilePic ?: string, 
     online?:Boolean, 
+    createdAt ?: string,
+    bio ?: string | null,  
+    location ?: string
+
 
   }
  export  type Message = {

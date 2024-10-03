@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,7 +8,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { User, Mail, MapPin, Calendar, Edit2, UserPlus } from 'lucide-react'
+import { User,  Mail, MapPin, Calendar, Edit2, UserPlus } from 'lucide-react'
+import { auth, db } from '@/firebase/firebaseConfig'
+import { onAuthStateChanged } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
+import { Users } from '@/types/types'
 
 interface FriendSuggestion {
   id: string
@@ -16,6 +20,7 @@ interface FriendSuggestion {
   avatar: string
   mutualFriends: number
 }
+ 
 
 
 const friendSuggestions: FriendSuggestion[] = [
@@ -27,6 +32,7 @@ const friendSuggestions: FriendSuggestion[] = [
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
+  const [currentUser, setCurrentUser] = useState<Users | null>(); 
   const [userProfile, setUserProfile] = useState({
     name: 'John Doe',
     email: 'john.doe@example.com',
@@ -34,6 +40,42 @@ export default function ProfilePage() {
     joinDate: 'January 2023',
     bio: 'Passionate developer and tech enthusiast. Love to collaborate on innovative projects!',
   })
+ 
+  useEffect(() => {
+    // Function to handle the async getDoc
+    const fetchUserDoc = async (uid: string) => {
+      try {
+        const userDocRef = doc(db, 'users', uid);  // Reference to the user's Firestore document
+        const userDocSnap = await getDoc(userDocRef); // Fetch the document
+        console.log(userDocSnap.data()); 
+        if (userDocSnap.exists()) {
+          setCurrentUser(userDocSnap.data() as Users); 
+          console.log(userDocSnap.data()) // Update state with the user data from Firestore
+        } else {
+          console.error("User document does not exist");
+        }
+      } catch (error) {
+        console.error("Error fetching user document:", error);
+      }
+    };
+  
+    // Set up the auth state listener
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        fetchUserDoc(user.uid);  // Fetch user data if authenticated
+      } else {
+        setCurrentUser(null);  // Clear user state if not authenticated
+      }
+    });
+  
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  
+  }, []); 
+
+  console.log(currentUser); 
+
+
 
   const handleEditToggle = () => {
     setIsEditing(!isEditing)
@@ -41,6 +83,8 @@ export default function ProfilePage() {
 
   const handleProfileUpdate = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+
+
     // Here you would typically send the updated profile to your backend
     setIsEditing(false)
   }
@@ -88,7 +132,7 @@ export default function ProfilePage() {
                       <Input
                         id="name"
                         name="name"
-                        value={userProfile.name}
+                        value={currentUser?.username}
                         onChange={handleInputChange}
                         className="mt-1 bg-gray-700/50 text-gray-100 border-gray-600 focus:border-blue-400 focus:ring-blue-400"
                       />
@@ -99,7 +143,7 @@ export default function ProfilePage() {
                         id="email"
                         name="email"
                         type="email"
-                        value={userProfile.email}
+                        value={currentUser?.email}
                         onChange={handleInputChange}
                         className="mt-1 bg-gray-700/50 text-gray-100 border-gray-600 focus:border-blue-400 focus:ring-blue-400"
                       />
@@ -109,7 +153,7 @@ export default function ProfilePage() {
                       <Input
                         id="location"
                         name="location"
-                        value={userProfile.location}
+                        value={currentUser?.location}
                         onChange={handleInputChange}
                         className="mt-1 bg-gray-700/50 text-gray-100 border-gray-600 focus:border-blue-400 focus:ring-blue-400"
                       />
@@ -119,7 +163,7 @@ export default function ProfilePage() {
                       <Textarea
                         id="bio"
                         name="bio"
-                        value={userProfile.bio}
+                        value={currentUser?.bio as string}
                         onChange={handleInputChange}
                         className="mt-1 bg-gray-700/50 text-gray-100 border-gray-600 focus:border-blue-400 focus:ring-blue-400"
                         rows={4}
@@ -131,25 +175,31 @@ export default function ProfilePage() {
                   </form>
                 ) : (
                   <div className="space-y-4">
+                    <div className="flex justify-center mb-4">
+                      <Avatar>
+                        <AvatarImage src={"./jpg"} className="w-44 h-44 rounded-full" alt="Profile picture" />
+                        <AvatarFallback>JD</AvatarFallback>
+                      </Avatar>
+                    </div>
                     <div className="flex items-center">
                       <User className="w-5 h-5 mr-3 text-blue-400" />
-                      <span className="text-gray-100">{userProfile.name}</span>
+                      <span className="text-gray-100">{currentUser ? currentUser?.username : "user not authenticated"}</span>
                     </div>
                     <div className="flex items-center">
                       <Mail className="w-5 h-5 mr-3 text-blue-400" />
-                      <span className="text-gray-100">{userProfile.email}</span>
+                      <span className="text-gray-100">{currentUser ? currentUser?.email : "user not authenticated"}</span>
                     </div>
                     <div className="flex items-center">
                       <MapPin className="w-5 h-5 mr-3 text-blue-400" />
-                      <span className="text-gray-100">{userProfile.location}</span>
+                      <span className="text-gray-100">{currentUser ? currentUser?.createdAt?.split('T')[0] : 'user not authenticated'}</span>
                     </div>
                     <div className="flex items-center">
                       <Calendar className="w-5 h-5 mr-3 text-blue-400" />
-                      <span className="text-gray-100">Joined {userProfile.joinDate}</span>
+                      <span className="text-gray-100">Joined {currentUser ? currentUser?.location : 'user not authenticated'}}</span>
                     </div>
                     <div className="mt-4">
                       <h3 className="text-lg font-semibold mb-2 text-gray-100">Bio</h3>
-                      <p className="text-gray-300">{userProfile.bio}</p>
+                      <p className="text-gray-300">{currentUser ? currentUser?.bio : 'user not authenticated'}</p>
                     </div>
                   </div>
                 )}
@@ -220,5 +270,5 @@ export default function ProfilePage() {
         </motion.div>
       </div>
     </div>
-  )
+  );
 }
