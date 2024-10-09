@@ -11,8 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { User,  Mail, MapPin, Calendar, Edit2, UserPlus } from 'lucide-react'
 import { auth, db } from '@/firebase/firebaseConfig'
 import { onAuthStateChanged } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
 import { Users } from '@/types/types'
+import { toast } from 'sonner'
 
 interface FriendSuggestion {
   id: string
@@ -81,10 +82,20 @@ export default function ProfilePage() {
     setIsEditing(!isEditing)
   }
 
-  const handleProfileUpdate = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleProfileUpdate = async(e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if(!currentUser){
+      toast.error("User is not logged In"); 
+    }
+    else{
+      const myuser = await updateDoc(doc(db, 'users', currentUser.uid as string), {
+          ...currentUser, 
+      }); 
 
+      console.log(myuser); 
+    }
 
+    
     // Here you would typically send the updated profile to your backend
     setIsEditing(false)
   }
@@ -190,12 +201,12 @@ export default function ProfilePage() {
                       <span className="text-gray-100">{currentUser ? currentUser?.email : "user not authenticated"}</span>
                     </div>
                     <div className="flex items-center">
-                      <MapPin className="w-5 h-5 mr-3 text-blue-400" />
+                      <Calendar className="w-5 h-5 mr-3 text-blue-400" />
                       <span className="text-gray-100">{currentUser ? currentUser?.createdAt?.split('T')[0] : 'user not authenticated'}</span>
                     </div>
                     <div className="flex items-center">
-                      <Calendar className="w-5 h-5 mr-3 text-blue-400" />
-                      <span className="text-gray-100">Joined {currentUser ? currentUser?.location : 'user not authenticated'}}</span>
+                      <MapPin className="w-5 h-5 mr-3 text-blue-400" />
+                      <span className="text-gray-100">Joined {currentUser ? currentUser?.location : 'user not authenticated'}</span>
                     </div>
                     <div className="mt-4">
                       <h3 className="text-lg font-semibold mb-2 text-gray-100">Bio</h3>
