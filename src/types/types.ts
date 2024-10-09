@@ -7,7 +7,7 @@ export type selectedContact = {
     unreadCount ?: number, 
   }
  export  type Users = {
-    username: string, 
+    name: string, 
     email : string, 
     uid : string, 
     profilePic ?: string, 

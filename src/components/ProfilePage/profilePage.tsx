@@ -35,11 +35,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [currentUser, setCurrentUser] = useState<Users | null>(); 
   const [userProfile, setUserProfile] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    location: 'New York, USA',
-    joinDate: 'January 2023',
-    bio: 'Passionate developer and tech enthusiast. Love to collaborate on innovative projects!',
+    ...currentUser, 
   })
  
   useEffect(() => {
@@ -51,6 +47,7 @@ export default function ProfilePage() {
         console.log(userDocSnap.data()); 
         if (userDocSnap.exists()) {
           setCurrentUser(userDocSnap.data() as Users); 
+          setUserProfile(userDocSnap.data()); 
           console.log(userDocSnap.data()) // Update state with the user data from Firestore
         } else {
           console.error("User document does not exist");
@@ -88,14 +85,15 @@ export default function ProfilePage() {
       toast.error("User is not logged In"); 
     }
     else{
-      const myuser = await updateDoc(doc(db, 'users', currentUser.uid as string), {
-          ...currentUser, 
-      }); 
-
-      console.log(myuser); 
-    }
-
-    
+      const userUpdation = await updateDoc(doc(db, 'users', currentUser.uid as string), {
+          ...userProfile, 
+          
+      });
+      const myuser = await getDoc(doc(db, 'users', currentUser.uid as string)); 
+      toast.success("User Info updated successfully"); 
+      setCurrentUser(myuser.data() as Users); 
+      console.log(myuser.data()); 
+    }    
     // Here you would typically send the updated profile to your backend
     setIsEditing(false)
   }
@@ -143,7 +141,7 @@ export default function ProfilePage() {
                       <Input
                         id="name"
                         name="name"
-                        value={currentUser?.username}
+                        value={userProfile?.name}
                         onChange={handleInputChange}
                         className="mt-1 bg-gray-700/50 text-gray-100 border-gray-600 focus:border-blue-400 focus:ring-blue-400"
                       />
@@ -154,7 +152,7 @@ export default function ProfilePage() {
                         id="email"
                         name="email"
                         type="email"
-                        value={currentUser?.email}
+                        value={userProfile?.email}
                         onChange={handleInputChange}
                         className="mt-1 bg-gray-700/50 text-gray-100 border-gray-600 focus:border-blue-400 focus:ring-blue-400"
                       />
@@ -164,7 +162,7 @@ export default function ProfilePage() {
                       <Input
                         id="location"
                         name="location"
-                        value={currentUser?.location}
+                        value={userProfile?.location}
                         onChange={handleInputChange}
                         className="mt-1 bg-gray-700/50 text-gray-100 border-gray-600 focus:border-blue-400 focus:ring-blue-400"
                       />
@@ -174,7 +172,7 @@ export default function ProfilePage() {
                       <Textarea
                         id="bio"
                         name="bio"
-                        value={currentUser?.bio as string}
+                        value={userProfile?.bio as string}
                         onChange={handleInputChange}
                         className="mt-1 bg-gray-700/50 text-gray-100 border-gray-600 focus:border-blue-400 focus:ring-blue-400"
                         rows={4}
@@ -194,7 +192,7 @@ export default function ProfilePage() {
                     </div>
                     <div className="flex items-center">
                       <User className="w-5 h-5 mr-3 text-blue-400" />
-                      <span className="text-gray-100">{currentUser ? currentUser?.username : "user not authenticated"}</span>
+                      <span className="text-gray-100">{currentUser ? currentUser?.name : "user not authenticated"}</span>
                     </div>
                     <div className="flex items-center">
                       <Mail className="w-5 h-5 mr-3 text-blue-400" />
