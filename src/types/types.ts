@@ -45,3 +45,15 @@ export type selectedContact = {
     value : number | string, 
     label : string, 
   }
+
+  export type MyUser = {
+    createdAt : Date | any, 
+    email : string, 
+    firstName : string, 
+    lastName : string, 
+    username : string, 
+    password : string, 
+    profilePic : string | URL | any,
+    uid : string, 
+    
+  } 

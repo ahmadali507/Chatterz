@@ -1,39 +1,49 @@
-'use client'
+"use client";
 import { motion, useAnimation, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LogIn, MessageCircle, UserPlus, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Auth, onAuthStateChanged } from "firebase/auth";
-import { auth } from "@/firebase/firebaseConfig";
+import { Auth, onAuthStateChanged, User } from "firebase/auth";
+import { auth, db } from "@/firebase/firebaseConfig";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { MyUser } from "@/types/types";
+import { useRouter } from "next/navigation";
+
+
+
 
 const Header = () => {
+  const router = useRouter(); 
   const controls = useAnimation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [currentUser, setCurrentUser] = useState(auth.currentUser || null);
+  const [currentUser, setCurrentUser] = useState<MyUser | null>();
 
-  useEffect(()=>{
-    const myUser = onAuthStateChanged(auth, (user)=>{
-      if(user){
-        setCurrentUser(user)
+  useEffect(() => {
+    
+    const getUserbyEmail =  async (email : string, user : User | null ) => {
+      const q = query(collection(db, 'users'), where("email", "==", user?.email));
+      const queryData = await getDocs(q);
+      return queryData?.docs[0]?.data() as MyUser; 
+    }
+   
+    const myUser = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const currUser: MyUser = await getUserbyEmail(user?.email as string, user)
+        setCurrentUser(currUser);
+      } else {
+        setCurrentUser(null);
       }
-      else {
-        setCurrentUser(null); 
-      }
-    }); 
-    return ()=>myUser(); 
-  }, [currentUser])
-  
-  
-
-
+    });
+    return () => myUser();
+  }, [currentUser]);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   const handleScroll = async (targetId: string) => {
@@ -77,10 +87,10 @@ const Header = () => {
           className="flex items-center space-x-2"
         >
           <Link href="/" className="flex flex-row gap-4">
-          <MessageCircle className="w-8 h-8 text-blue-500" />
-          <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
-            Chatterz
-          </span>
+            <MessageCircle className="w-8 h-8 text-blue-500" />
+            <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+              Chatterz
+            </span>
           </Link>
         </motion.div>
         <nav className="flex items-center space-x-4">
@@ -90,7 +100,11 @@ const Header = () => {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
           >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
           </motion.button>
           <ul className="hidden md:flex space-x-6">
             {navItems.map((item, index) => (
@@ -107,8 +121,8 @@ const Header = () => {
                   scroll={false}
                   onClick={(e) => {
                     // e.preventDefault();
-                    if(item.toLowerCase() !== "about"){
-                      e.preventDefault(); 
+                    if (item.toLowerCase() !== "about") {
+                      e.preventDefault();
                     }
                     handleScroll(item.toLowerCase());
                   }}
@@ -125,25 +139,37 @@ const Header = () => {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="hidden md:flex space-x-2"
           >
-            <Link href="/login">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/50"
-              >
-                <LogIn className="w-4 h-4 mr-2" />
-                Sign In
-              </Button>
-            </Link>
-            <Link href="/signup">
-              <Button
-                size="sm"
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-              >
-                <UserPlus className="w-4 h-4 mr-2" />
-                Sign Up
-              </Button>
-            </Link>
+            {currentUser && 
+           <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+              <button className="text-white font-bold" onClick={() => router.push('/profile')}>
+                {currentUser.firstName?.charAt(0).toUpperCase() + currentUser.lastName?.charAt(0).toUpperCase()}
+              </button>
+           </div>
+          }
+            {!currentUser && (
+    
+              <>
+                <Link href="/login">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/50"
+                  >
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/signup">
+                  <Button
+                    size="sm"
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Sign Up
+                  </Button>
+                </Link>
+              </>
+            )}
           </motion.div>
         </nav>
       </motion.header>
@@ -199,7 +225,10 @@ const Header = () => {
               <motion.li
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, delay: (navItems.length + 1) * 0.1 }}
+                transition={{
+                  duration: 0.2,
+                  delay: (navItems.length + 1) * 0.1,
+                }}
                 className="w-full px-4 pt-2"
               >
                 <Link href="/signup" className="block w-full">

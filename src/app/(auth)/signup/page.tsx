@@ -25,6 +25,8 @@ import Link from "next/link";
 
 const SignUpSchema = z.object({
   username: z.string().min(1, "The username is required"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName : z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address").min(1, "Email is required"),
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
@@ -85,6 +87,8 @@ export default function Component() {
 
       await setDoc(doc(db, "users", userCredentials.user.uid), {
         email : data.email, 
+        firstName : data.firstName, 
+        lastName: data.lastName, 
         username : data.username, 
         password : data.password,
         profilePic : null, 
@@ -159,13 +163,46 @@ export default function Component() {
           <h1 className="text-3xl font-bold text-white">Sign Up</h1>
           <p className="text-gray-300">Create an account to get started</p>
         </div>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 flex-col items-center">
           {!emailVerified ? (
             <div className="text-center text-lg">
               Verify Your Email to continue
             </div>
           ) : (
             <>
+            <div className="flex flex-row justify-between  ">
+              {/* firstName */}
+              <div className = "flex flex-col gap-2 ">
+                <Label htmlFor="username" className="text-gray-200">
+                  First Name
+                </Label>
+                <Input
+                  id="username"
+                  placeholder="John"
+                  {...register("firstName")}
+                  className="bg-white bg-opacity-10 w-1/1.5 border-white border-opacity-20 placeholder-gray-300 text-white focus:border-teal-300 focus:ring-teal-300"
+                />
+                {errors.firstName && (
+                  <p className="text-red-500">{errors.firstName.message}</p>
+                )}
+              </div>
+                {/* last name  */}
+                <div className = "flex flex-col gap-2">
+                <Label htmlFor="username" className="text-gray-200">
+                  Last Name
+                </Label>
+                <Input
+                  id="username"
+                  placeholder="Doe"
+                  {...register("lastName")}
+                  className="bg-white bg-opacity-10 w-1/1.5 border-white border-opacity-20 placeholder-gray-300 text-white focus:border-teal-300 focus:ring-teal-300"
+                  />
+                {errors.lastName && (
+                  <p className="text-red-500">{errors.lastName.message}</p>
+                )}
+                </div>
+              </div>
+             
               <div className="space-y-2">
                 <Label htmlFor="username" className="text-gray-200">
                   Username
