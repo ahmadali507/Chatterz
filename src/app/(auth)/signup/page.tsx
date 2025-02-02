@@ -22,6 +22,8 @@ import { Icons } from "@/components/icons";
 import { UserCheck2Icon } from "lucide-react";
 import { doc, setDoc } from "firebase/firestore";
 import Link from "next/link";
+import { useCurrentUser } from "@/context/currUserContext";
+// import { handleGoogleSignIn } from "@/actions/Firebase_actions";
 
 const SignUpSchema = z.object({
   username: z.string().min(1, "The username is required"),
@@ -47,7 +49,12 @@ export default function Component() {
     resolver: zodResolver(SignUpSchema),
   });
 
-  const user = auth?.currentUser;
+  // const user = auth?.currentUser;
+  const user = useCurrentUser(); 
+
+
+
+
   // // Function to check email verification
   // const checkEmailVerification = async () => {
   //   if (auth?.currentUser) {
@@ -153,6 +160,8 @@ export default function Component() {
       toast.error("Google sign-in failed. Please try again.");
     }
   };
+
+  // handleGoogleSignIn()
 
   const GoogleIcons = Icons["googleicon"];
 

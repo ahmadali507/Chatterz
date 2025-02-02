@@ -35,6 +35,8 @@ import { FirebaseError } from "firebase/app";
 import { onAuthStateChanged } from "firebase/auth";
 import { set } from "react-hook-form";
 import { resolve } from "path";
+import { fetchMessages } from "@/actions/Firebase_actions";
+import { createChatId } from "@/helpers/helpers";
 
 type showUser = Users & {
   lastMessage?: string;
@@ -48,12 +50,14 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   // const [lastMessage, setlastMessage] = useState<string>("");
   const [chatid, setChatId] = useState<string>("");
-  const [currentUser, setCurrentUser] = useState(auth.currentUser);
+  const [currentUser, setCurrentUser] = useState<any>(auth.currentUser);
+  
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         toast.success("User authenticated");
+
         setCurrentUser(user);
       } else {
         toast.error("User not authenticated");
@@ -70,14 +74,9 @@ export default function ChatPage() {
     }
   }, [currentUser]);
 
-  const createChatId = (id1: string, id2: string): string => {
-    return [id1, id2]
-      .sort((a, b) => a.localeCompare(b)) // Sort the IDs
-      .join("_"); // Join them with an underscore
-  };
+  
 
   // const scroll to hte latest message automatically...
-
   const lastMessageRef = useRef<HTMLDivElement | null>(null);
   const scrollToBottom = () => {
     if (lastMessageRef.current) {
@@ -167,27 +166,27 @@ export default function ChatPage() {
   };
 
   // 2. Function to fetch messages based on chatid
-  const fetchMessages = async (
-    chatid: string
-  ): Promise<Message[] | undefined> => {
-    if (!chatid || chatid.trim() === "") {
-      console.error("Invalid chat ID provided.");
-      return;
-    }
+  // const fetchMessages = async (
+  //   chatid: string
+  // ): Promise<Message[] | undefined> => {
+  //   if (!chatid || chatid.trim() === "") {
+  //     console.error("Invalid chat ID provided.");
+  //     return;
+  //   }
 
-    try {
-      const messagesRef = collection(db, "chats", chatid, "messages");
-      const messagesSnapshot = await getDocs(messagesRef);
-      const messagesData: Message[] = messagesSnapshot.docs.map((doc) => ({
-        ...doc.data(),
-      })) as Message[];
+  //   try {
+  //     const messagesRef = collection(db, "chats", chatid, "messages");
+  //     const messagesSnapshot = await getDocs(messagesRef);
+  //     const messagesData: Message[] = messagesSnapshot.docs.map((doc) => ({
+  //       ...doc.data(),
+  //     })) as Message[];
 
-      return messagesData;
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      return undefined;
-    }
-  };
+  //     return messagesData;
+  //   } catch (error) {
+  //     console.error("Error fetching messages:", error);
+  //     return undefined;
+  //   }
+  // };
 
   // 3. useEffect to fetch messages when chatid changes
   useEffect(() => {
@@ -226,7 +225,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (!currentUser) return;
-
+  
     const fetchUsers = async () => {
       const querySnapshot = await getDocs(collection(db, "users"));
       let usersData = querySnapshot.docs
@@ -237,19 +236,22 @@ export default function ChatPage() {
           lastMessageTimestamp: null,
         }))
         .filter((user) => user.uid !== currentUser?.uid);
-
-      // Listen for real-time updates
-      usersData.forEach((user) => {
+  
+      // State update with fetched users (before real-time listeners)
+      setUsers(usersData);
+  
+      // Store unsubscribe functions for cleanup
+      const unsubscribers = usersData.map((user) => {
         const chatId = createChatId(currentUser.uid, user.uid);
         const chatRef = doc(db, "chats", chatId);
-
-        onSnapshot(chatRef, (chatDoc) => {
+  
+        return onSnapshot(chatRef, (chatDoc) => {
           if (chatDoc.exists()) {
             const lastMessage = chatDoc.data()?.lastMessage || "";
             const lastMessageTimestamp =
               chatDoc.data()?.lastMessageTimeStamp || null;
-
-            // Update state properly by mapping over usersData
+  
+            // Update the state with new message data
             setUsers((prevUsers) =>
               prevUsers.map((u) =>
                 u.uid === user.uid
@@ -260,12 +262,16 @@ export default function ChatPage() {
           }
         });
       });
-
-      setUsers(usersData);
+  
+      // Cleanup function to unsubscribe when the component unmounts
+      return () => {
+        unsubscribers.forEach((unsubscribe) => unsubscribe());
+      };
     };
-
+  
     fetchUsers();
-  }, [currentUser]);
+  }, [currentUser]); // Dependencies array
+  
   useEffect(() => {
     if (selectedContact) {
       const chatId = createChatId(
@@ -410,6 +416,7 @@ export default function ChatPage() {
                     }`}
                     ref={index === messages.length - 1 ? lastMessageRef : null}
                   >
+                    <div>{currentUser?.displayName}</div>
                     {/* Message Text */}
                     <div>{msg.text}</div>
 

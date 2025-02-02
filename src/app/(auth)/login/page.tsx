@@ -1,4 +1,5 @@
 'use client'
+// import { checkUserExistenceInFirestore } from "@/actions/Firebase_actions"
 import { Icons } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,11 +35,7 @@ export default function Component() {
   }); 
 
 
-  const checkUserExistenceInFirestore = async( uid: string) =>{
-    const userDocRef = doc(db, "users", uid); 
-     const userData = await getDoc(userDocRef);
-     return userData.exists(); 
-  }
+
   const onSubmit = async (data: any) => {
     try {
       // Attempt to sign in the user
@@ -82,7 +79,19 @@ export default function Component() {
       // Optionally log the error for debugging
       console.error("Error during sign-in:", error);
     }
+
+
   }
+
+
+
+   const checkUserExistenceInFirestore = async( uid: string) =>{
+      const userDocRef = doc(db, "users", uid); 
+       const userData = await getDoc(userDocRef);
+       return userData.exists(); 
+    }
+  
+
   const handleGoogleLogin =  async() =>{
        const result  =    await signInWithPopup(auth, provider); 
        const user = result.user;
