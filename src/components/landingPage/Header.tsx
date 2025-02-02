@@ -142,7 +142,11 @@ const Header = () => {
             {currentUser && 
            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
               <button className="text-white font-bold" onClick={() => router.push('/profile')}>
-                {currentUser.firstName?.charAt(0).toUpperCase() + currentUser.lastName?.charAt(0).toUpperCase()}
+                {
+                  currentUser?.firstName  ? 
+                currentUser.firstName?.charAt(0).toUpperCase() + currentUser.lastName?.charAt(0).toUpperCase()
+                : currentUser?.username.charAt(0).toUpperCase()
+              }
               </button>
            </div>
           }

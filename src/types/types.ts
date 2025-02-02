@@ -1,12 +1,10 @@
 
-export type selectedContact = {
-    uid : string,
-    username : string, 
-    profilePic ?: string, 
-    lastMessage ?: string,
-    unreadCount ?: number, 
+export type selectedContact =  Users & {
+     username : string, 
   }
  export  type Users = {
+    firstName ?: string, 
+    lastName ?: string,   
     name: string, 
     email : string, 
     uid : string, 
@@ -14,9 +12,9 @@ export type selectedContact = {
     online?:Boolean, 
     createdAt ?: string,
     bio ?: string | null,  
-    location ?: string
-
-
+    location ?: string, 
+    username ?: string,
+    mutualFriends?: number, 
   }
  export  type Message = {
     senderId : string, 
@@ -55,5 +53,5 @@ export type selectedContact = {
     password : string, 
     profilePic : string | URL | any,
     uid : string, 
-    
+
   } 

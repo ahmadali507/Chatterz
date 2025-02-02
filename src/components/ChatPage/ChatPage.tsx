@@ -26,20 +26,27 @@ import {
   query,
   setDoc,
   updateDoc,
+  where,
 } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebaseConfig";
 import { Message, selectedContact, Users } from "@/types/types";
 import { toast } from "sonner";
 import { FirebaseError } from "firebase/app";
 import { onAuthStateChanged } from "firebase/auth";
+import { set } from "react-hook-form";
+import { resolve } from "path";
 
+type showUser = Users & {
+  lastMessage?: string;
+  lastMessageTimestamp?: Date | string;
+};
 export default function ChatPage() {
-  const [selectedContact, setSelectedContact] =
-    useState<selectedContact | null>(null);
-  const [users, setUsers] = useState<Users[]>([]);
+  const [selectedContact, setSelectedContact] = useState<Users | null>(null);
+  const [users, setUsers] = useState<showUser[]>([]);
   const [showChat, setShowChat] = useState(false);
   const [message, setMessage] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
+  // const [lastMessage, setlastMessage] = useState<string>("");
   const [chatid, setChatId] = useState<string>("");
   const [currentUser, setCurrentUser] = useState(auth.currentUser);
 
@@ -72,7 +79,6 @@ export default function ChatPage() {
   // const scroll to hte latest message automatically...
 
   const lastMessageRef = useRef<HTMLDivElement | null>(null);
-
   const scrollToBottom = () => {
     if (lastMessageRef.current) {
       lastMessageRef.current.scrollIntoView({ behavior: "smooth" });
@@ -212,47 +218,68 @@ export default function ChatPage() {
         ...doc.data(),
       })) as Message[];
       setMessages(messagesData);
+      // setlastMessage(messagesData[messagesData.length - 1].text);
     });
 
-    return () => unsubscribe(); 
+    return () => unsubscribe();
   }, [chatid]);
 
   useEffect(() => {
-    const fetchUser = async () => {
+    if (!currentUser) return;
+
+    const fetchUsers = async () => {
       const querySnapshot = await getDocs(collection(db, "users"));
-      const usersData: Users[] = querySnapshot.docs
+      let usersData = querySnapshot.docs
         .map((doc) => ({
           uid: doc.id,
           ...doc.data(),
+          lastMessage: "", // Default values
+          lastMessageTimestamp: null,
         }))
-        .filter((user) => user.uid !== currentUser?.uid) as Users[];
+        .filter((user) => user.uid !== currentUser?.uid);
+
+      // Listen for real-time updates
+      usersData.forEach((user) => {
+        const chatId = createChatId(currentUser.uid, user.uid);
+        const chatRef = doc(db, "chats", chatId);
+
+        onSnapshot(chatRef, (chatDoc) => {
+          if (chatDoc.exists()) {
+            const lastMessage = chatDoc.data()?.lastMessage || "";
+            const lastMessageTimestamp =
+              chatDoc.data()?.lastMessageTimeStamp || null;
+
+            // Update state properly by mapping over usersData
+            setUsers((prevUsers) =>
+              prevUsers.map((u) =>
+                u.uid === user.uid
+                  ? { ...u, lastMessage, lastMessageTimestamp }
+                  : u
+              )
+            );
+          }
+        });
+      });
 
       setUsers(usersData);
     };
-    fetchUser();
+
+    fetchUsers();
   }, [currentUser]);
-
-  // const handleContactClick = async (contact: Users) => {
-  //   setSelectedContact(contact);
-  //   console.log(selectedContact?.username);
-  //   const chatId = createChatId(currentUser?.uid as string, contact?.uid); // Use new chat ID generation logic
-  //   setChatId(chatId);
-  //   console.log(chatId); 
-  //   setShowChat(true);
-  //   await createChat();
-  // };
-
   useEffect(() => {
     if (selectedContact) {
-      const chatId = createChatId(currentUser?.uid as string, selectedContact?.uid);
-      setChatId(chatId);  // Set chat ID after selectedContact is set
+      const chatId = createChatId(
+        currentUser?.uid as string,
+        selectedContact?.uid
+      );
+      setChatId(chatId); // Set chat ID after selectedContact is set
       console.log(selectedContact?.username);
       console.log(chatId);
       setShowChat(true);
-      createChat();  // Create the chat after the contact is selected
+      createChat(); // Create the chat after the contact is selected
     }
   }, [selectedContact]); // Trigger useEffect when selectedContact changes
-  
+
   const handleContactClick = (contact: Users) => {
     setSelectedContact(contact); // This will trigger the useEffect
   };
@@ -303,14 +330,25 @@ export default function ChatPage() {
                   className="p-4 border-b border-purple-500/30 cursor-pointer"
                 >
                   <div className="flex items-center">
-                    <Avatar className="w-12 h-12 mr-4">
-                      <AvatarImage src={user.profilePic} alt={user.username} />
-                      <AvatarFallback>{user.username.charAt(0)}</AvatarFallback>
+                    <Avatar className="w-12 h-12 mr-4 bg-red-500 flex items-center justify-center text-white font-bold">
+                      {user.profilePic ? (
+                        <AvatarImage
+                          src={user.profilePic}
+                          alt={user.username}
+                        />
+                      ) : (
+                        <AvatarFallback className="w-full h-full flex items-center text-slate-900 bg-slate-300 justify-center">
+                          {user.username?.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      )}
                     </Avatar>
-                    <div className="flex-grow">
+
+                    <div className="w-full overflow-hidden">
                       <h3 className="font-semibold">{user.username}</h3>
-                      <p className="text-sm text-gray-400 truncate">
-                        No message to display
+                      <p className="text-sm text-gray-400 truncate w-[7rem] whitespace-nowrap overflow-hidden text-ellipsis">
+                        {user.lastMessage
+                          ? user.lastMessage
+                          : "No messages yet"}
                       </p>
                     </div>
                   </div>
@@ -344,9 +382,11 @@ export default function ChatPage() {
                   src={selectedContact.profilePic}
                   alt={selectedContact.username}
                 />
-                <AvatarFallback>
-                  {selectedContact.username.charAt(0)}
-                </AvatarFallback>
+                {selectedContact && (
+                  <AvatarFallback>
+                    selectedContact?.username.charAt(0)
+                  </AvatarFallback>
+                )}
               </Avatar>
               <h2 className="text-lg font-bold">{selectedContact.username}</h2>
               <Button
@@ -383,7 +423,11 @@ export default function ChatPage() {
                             })
                           : "Invalid Date"}
                       </div>
-                      <div className={` text-xs self-end ${msg?.read===true ? 'text-blue-400' : 'text-gray-400'}`}>
+                      <div
+                        className={` text-xs self-end ${
+                          msg?.read === true ? "text-blue-400" : "text-gray-400"
+                        }`}
+                      >
                         //
                       </div>
                     </div>
